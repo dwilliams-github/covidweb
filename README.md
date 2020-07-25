@@ -11,9 +11,11 @@ might be time to formalize things a bit and build a proper web app.
 
 ## Running
 
+Make sure your redis server is up and running. Include it's uri in config.py.
+
 For development, it's handy to include a source watcher
 ```
-gunicorn --reload server:app
+gunicorn --reload --reload-extra-file server/templates/*.html server:app
 ```
 
 ## Data sources
@@ -26,7 +28,8 @@ International | About-Corona | https://about-corona.net/
 
 ## Architecture
 
-The client is presented with a single dynamic html page.
+The client is presented with a single dynamic html page. Selections are
+presented in DHTML controlled entirely in javascript implemented with jquery.
 
 
 ## Technology

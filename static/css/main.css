@@ -1,0 +1,76 @@
+body {
+	font-family: 'Open Sans', sans-serif;
+	background: #333333;		
+	color: #CCCCCC;
+	margin: 20px;
+	padding: 0;
+}
+sup { font-size: 60%; }
+a,
+a:link,
+a:visited
+{
+	color: #CCCC66;
+	text-decoration:none;
+	outline: none;
+}
+a:hover {
+	color: #FFFF99;
+	text-decoration:underline;
+	outline: none;
+}
+a:active {
+	color: #FFFF99;
+	text-decoration:none;
+	outline: none;
+}
+.banner {
+	color:#CC9933;
+	font-size:30pt;
+	font-weight:bold;
+}
+.bannercaption {
+	font-weight:bold;
+	background:#333;
+	margin-bottom: 15px;
+	margin-top: 4px;
+}
+.viewer {
+	display: flex;
+}
+.menu {
+	background: #444444;
+	display: block;
+	padding: 10px 20px;
+	min-height: 500px;
+}
+.menu .option {
+	font-size: 10pt;
+	cursor: pointer;
+	padding-bottom: 2pt;
+	color: #CCCC66;
+}
+.menu .selected {
+	color: #FFFF99;
+}
+.menu .selected:before {
+	content: "▶";
+	margin-left: -12pt;
+	margin-right: 2pt;
+	width: 10pt;
+	display: inline-block;
+}
+.menu .option:hover {
+	text-decoration: underline;
+}
+.view {
+	padding: 10px;
+}
+.footer {
+	margin-top: 10px;
+	font-size: 9pt;
+}
+.copyright {
+	font-size: 0.7em;
+	color: rgb(133, 133, 133);
+}
