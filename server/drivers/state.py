@@ -227,20 +227,23 @@ def top_four_cases():
 
     chart = alt.Chart(dtds)
 
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
     top = chart.mark_line(point=True).encode(
         x = alt.X('dt:T',title="Date"),
         y = alt.Y('positiveIncrease:Q',title="Daily cases"),
-        color = 'state:N'
+        color = 'state:N',
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(width=500, height=200, title="Top states in new cases")
 
     bottom = chart.mark_line().encode(
         x = alt.X('dt:T',title="Date"),
         y = alt.Y('roll:Q',title="Daily cases, 7 day rolling average"),
-        color = 'state:N'
+        color = 'state:N',
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(width=500, height=200)
 
-    return (top & bottom).to_dict()
-
+    return (top & bottom).add_selection(selection).to_dict()
 
 
 def top_five_fatalities():
@@ -265,15 +268,19 @@ def top_five_fatalities():
     roll = dtds.groupby("state").apply(lambda r: r.deathIncrease.rolling(window=7).mean())
     dtds['roll'] = roll.droplevel(0)
 
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
     return alt.Chart(dtds).mark_line().encode(
         x = alt.X('dt:T',title="Date"),
         y = alt.Y('roll:Q',title="Daily fatalities, 7 day rolling average"),
-        color = 'state:N'
+        color = 'state:N',
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
         width=500, 
         height=400,
         title="Top states in 7 day fatalities"
-    ).to_dict()
+    ).add_selection(selection).to_dict()
+
 
 def top_five_fatalities_capita():
     r = redis.Redis()
@@ -282,8 +289,6 @@ def top_five_fatalities_capita():
 
     dt = dt.merge(pop,on="state")
     dt['ndeath'] = 100000*dt.deathIncrease/dt.POPESTIMATE2010
-
-
     
     #
     # Rank by rolling average. This requires a little pandas trickery.
@@ -303,12 +308,48 @@ def top_five_fatalities_capita():
     roll = dtds.groupby("state").apply(lambda r: r.ndeath.rolling(window=7).mean())
     dtds['roll'] = roll.droplevel(0)
 
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
     return alt.Chart(dtds).mark_line().encode(
         x = alt.X('dt:T',title="Date"),
         y = alt.Y('roll:Q',title="Fatalities per 100,000, 7 day rolling average"),
-        color = 'state:N'
+        color = 'state:N',
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
         width=500, 
         height=400,
-        title="Top states in 7 day fatalities/capita"
-    ).to_dict()
+        title="Top states in 7 day fatalities per capita"
+    ).add_selection(selection).to_dict()
+
+
+def death_bar():
+    r = redis.Redis()
+    dt = fetchData(r)
+    pop = fetchPopulation(r)
+
+    latest = dt.groupby("state").apply(lambda r: r.sort_values(by="dt").deathIncrease.rolling(7).mean().tail(1))
+    latest = latest.reset_index()
+    latest = latest.merge(pop,on="state")
+
+    latest['dper'] = 100000*latest.deathIncrease/latest.POPESTIMATE2010
+
+    chart = alt.Chart(latest)
+
+    top = chart.mark_bar().encode(
+        x = alt.X("state:N",title="State"),
+        y = alt.Y("deathIncrease:Q",title="Fatalities")
+    ).properties(
+        width = 600,
+        height = 200,
+        title = "7 day average {}".format(date.today())
+    )
+
+    bottom = chart.mark_bar().encode(
+        x = alt.X("state:N",title="State"),
+        y = alt.Y("dper:Q",title="Fatalities / 100,000 population")
+    ).properties(
+        width = 600,
+        height = 200
+    )
+
+    return (top & bottom).to_dict()

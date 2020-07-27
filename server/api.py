@@ -22,3 +22,5 @@ def plot_state_composite():
         return jsonify(state.top_five_fatalities())
     if mode == 'TFC':
         return jsonify(state.top_five_fatalities_capita())
+    if mode == 'DB':
+        return jsonify(state.death_bar())
