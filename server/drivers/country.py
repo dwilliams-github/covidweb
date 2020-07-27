@@ -117,9 +117,11 @@ def plot(code):
         y = alt.Y('droll:Q')
     )
 
-    top = (case_points + case_average).properties(width=500, height=200)
+    top = (case_points + case_average).properties(
+        width=500, 
+        height=200,
+        title=ckey[ckey.code==code].name.to_string(index=False)
+    )
     bot = (death_points + death_average).properties(width=500, height=200)
 
-    return (top & bot).properties(
-        title=ckey[ckey.code==code].name.to_string(index=False)
-    ).configure_legend(title=None).to_dict()
+    return (top & bot).configure_legend(title=None).to_dict()

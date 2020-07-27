@@ -106,6 +106,8 @@ def plot(code,mode):
     dt['src1'] = "Daily"
     dt['src2'] = "7 day"
 
+    title = pop[pop.state==code].NAME.to_string(index=False)
+
     def case_plot(chart):
         fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
 
@@ -119,7 +121,7 @@ def plot(code,mode):
             y = alt.Y('croll:Q'),
             color = alt.Color("src2", scale=fake_scale)
         )
-        return (case_points + case_average).properties(width=500, height=200)
+        return (case_points + case_average).properties(width=500, height=200, title=title)
 
     if mode == 'T':
         dt['troll'] = dt.totalTestResultsIncrease.rolling(window=7).mean()
@@ -144,7 +146,7 @@ def plot(code,mode):
             y = alt.Y('troll:Q'),
             color = alt.Color("src2", scale=fake_scale)
         )
-        top = (case_points + case_average).properties(width=500, height=200)
+        top = (case_points + case_average).properties(width=500, height=200, title=title)
 
         posit_points = chart.mark_line(
             point={"color": "lightgrey"}, 
@@ -201,6 +203,112 @@ def plot(code,mode):
 
         bot = (death_points + death_average).properties(width=500, height=200)
 
-    return (top & bot).properties(
-        title=pop[pop.state==code].NAME.to_string(index=False)
-    ).configure_legend(title=None).to_dict()
+    return (top & bot).configure_legend(title=None).to_dict()
+
+
+def top_four_cases():
+    r = redis.Redis()
+    dt = fetchData(r)
+    
+    #
+    # Reduce dataframe to four worst states, by today's positiveIncrease
+    #
+    worst = dt.loc[:,("state","positiveIncrease")].groupby("state").first().sort_values(("positiveIncrease"),ascending=False)
+    dtds = dt[dt.state.isin(worst.index[0:4])]
+
+    #
+    # Use groupby to produce a rolling average per state
+    #
+    dtds = dtds[dtds.dt>=pd.to_datetime(date(2002,3,1))]
+    dtds = dtds.filter(items=("state","dt","positiveIncrease")).sort_values(by="dt")
+
+    roll = dtds.groupby("state").apply(lambda r: r.positiveIncrease.rolling(window=7).mean())
+    dtds['roll'] = roll.droplevel(0)
+
+    chart = alt.Chart(dtds)
+
+    top = chart.mark_line(point=True).encode(
+        x = alt.X('dt:T',title="Date"),
+        y = alt.Y('positiveIncrease:Q',title="Daily cases"),
+        color = 'state:N'
+    ).properties(width=500, height=200, title="Top states in new cases")
+
+    bottom = chart.mark_line().encode(
+        x = alt.X('dt:T',title="Date"),
+        y = alt.Y('roll:Q',title="Daily cases, 7 day rolling average"),
+        color = 'state:N'
+    ).properties(width=500, height=200)
+
+    return (top & bottom).to_dict()
+
+
+
+def top_five_fatalities():
+    r = redis.Redis()
+    dt = fetchData(r)
+    
+    #
+    # Rank by rolling average. This requires a little pandas trickery.
+    #
+    ranking = dt.loc[:,("dt","state","deathIncrease")].groupby("state").apply(
+        lambda s: s.sort_values("dt").deathIncrease.rolling(window=7).mean().tail(1)
+    )
+    worst = ranking.sort_values(ascending=False).reset_index().state[0:5]
+    dtds = dt[dt.state.isin(worst)]
+
+    #
+    # Use groupby to produce a rolling average per state
+    #
+    dtds = dtds[dtds.dt>=pd.to_datetime(date(2002,3,1))]
+    dtds = dtds.filter(items=("state","dt","deathIncrease")).sort_values(by="dt")
+
+    roll = dtds.groupby("state").apply(lambda r: r.deathIncrease.rolling(window=7).mean())
+    dtds['roll'] = roll.droplevel(0)
+
+    return alt.Chart(dtds).mark_line().encode(
+        x = alt.X('dt:T',title="Date"),
+        y = alt.Y('roll:Q',title="Daily fatalities, 7 day rolling average"),
+        color = 'state:N'
+    ).properties(
+        width=500, 
+        height=400,
+        title="Top states in 7 day fatalities"
+    ).to_dict()
+
+def top_five_fatalities_capita():
+    r = redis.Redis()
+    dt = fetchData(r)
+    pop = fetchPopulation(r)
+
+    dt = dt.merge(pop,on="state")
+    dt['ndeath'] = 100000*dt.deathIncrease/dt.POPESTIMATE2010
+
+
+    
+    #
+    # Rank by rolling average. This requires a little pandas trickery.
+    #
+    ranking = dt.loc[:,("dt","state","ndeath")].groupby("state").apply(
+        lambda s: s.sort_values("dt").ndeath.rolling(window=7).mean().tail(1)
+    )
+    worst = ranking.sort_values(ascending=False).reset_index().state[0:5]
+    dtds = dt[dt.state.isin(worst)]
+
+    #
+    # Use groupby to produce a rolling average per state
+    #
+    dtds = dtds[dtds.dt>=pd.to_datetime(date(2002,3,1))]
+    dtds = dtds.filter(items=("state","dt","ndeath")).sort_values(by="dt")
+
+    roll = dtds.groupby("state").apply(lambda r: r.ndeath.rolling(window=7).mean())
+    dtds['roll'] = roll.droplevel(0)
+
+    return alt.Chart(dtds).mark_line().encode(
+        x = alt.X('dt:T',title="Date"),
+        y = alt.Y('roll:Q',title="Fatalities per 100,000, 7 day rolling average"),
+        color = 'state:N'
+    ).properties(
+        width=500, 
+        height=400,
+        title="Top states in 7 day fatalities/capita"
+    ).to_dict()

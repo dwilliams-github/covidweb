@@ -10,10 +10,17 @@ function state() {
     .then($("#v10 .vega").removeClass("shade"))
     .catch(console.error);
 }
+function stateComposite() {
+    $("#v11 .vega").addClass("shade");
+    vegaEmbed( "#v11 .vega", "/api/state/composite?"+$("#modecompstate").serialize() )
+    .then($("#v11 .vega").removeClass("shade"))
+    .catch(console.error);
+}
 function renderView(view) {
     switch(view) {
         case 0: return country();
         case 10: return state();
+        case 11: return stateComposite();
     }
 }
 function refresh() {
@@ -25,7 +32,7 @@ $(document).ready(function(){
     $("#selcountry,#selstate,#modestate,#modecompstate").select2();
     $("#selcountry").change(country);
     $("#selstate,#modestate").change(state);
-    refresh();
+    $("#modecompstate").change(stateComposite);
     $("div.menu .option").click(function(){
         $("div.menu .option").removeClass("selected");
         $(this).addClass("selected");
@@ -33,4 +40,6 @@ $(document).ready(function(){
         $("#v" + $(this).attr("id").substr(1)).removeClass('hidden');
         refresh();
     });
+    
+    refresh();
 });
