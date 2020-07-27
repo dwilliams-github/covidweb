@@ -63,8 +63,26 @@ a:active {
 .menu .option:hover {
 	text-decoration: underline;
 }
+.hidden {
+	display: none;
+}
 .view {
-	padding: 10px;
+	padding: 10px 20px;
+}
+.view .control {
+	display: block;
+	margin-bottom: 10px;
+	font-size: 10pt;
+}
+.view .shade {
+	opacity: 20%;
+}
+.view .sources {
+	font-size: 9pt;
+	padding-top: 10px;
+}
+.view .sources p, .view .sources ul {
+	margin: 0;
 }
 .footer {
 	margin-top: 10px;

@@ -12,8 +12,10 @@ might be time to formalize things a bit and build a proper web app.
 ## Running
 
 Make sure your redis server is up and running. Include it's uri in config.py.
+For MacOS, you can issue the command ```brew services redis start```.
+On linux, consider using docker.
 
-For development, it's handy to include a source watcher
+For development, it's handy to include a source watcher while running the server
 ```
 gunicorn --reload --reload-extra-file server/templates/*.html server:app
 ```

@@ -1,9 +1,12 @@
 from flask import Blueprint, render_template
+from .drivers.country import menu as country_menu
+from .drivers.state import menu as state_menu
 
-main_page = Blueprint('page', __name__)
+main_page = Blueprint('main_page', __name__)
 @main_page.route("/")
 def index():
     return render_template(
         "main.html",
-        message="Hello"
+        country_menu = country_menu(),
+        state_menu = state_menu()
     )
