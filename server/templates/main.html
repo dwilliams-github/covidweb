@@ -87,6 +87,26 @@
           </ul>
         </div>
       </div>
+      <div id="v20" class="view hidden">
+        <div class="control">
+          <select name="code" id="selcounty">
+            {% for n in county_menu.names %}
+              {% if n == county_menu.default %}
+                <option selected="selected">{{n}}</option>
+              {% else %}
+                <option >{{n}}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="vega"></div>
+        <div class="sources">
+          <p>Data sources:</p>
+          <ul>
+            <li>Data from <a href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html" target="_blank">The New York Times</a>, based on reports from state and local health agencies</li>
+          </ul>
+        </div>
+      </div>
     </div>
     <div class="footer">
       <div><a href="https://slashdave.com/terms">Terms of use</a></div>

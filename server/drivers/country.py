@@ -92,17 +92,17 @@ def plot(code):
 
     chart = alt.Chart(dt)
 
-    fake_scale = scale=alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
+    fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
 
     case_points = chart.mark_line(point=True).encode(
         x = alt.X("dt:T",title="Date"),
         y = alt.Y("cases:Q",title="Cases"),
-        color = alt.Color("src1", scale=scale)
+        color = alt.Color("src1", scale=fake_scale)
     )
     case_average = chart.mark_line().encode(
         x = alt.X('dt:T'),
         y = alt.Y('croll:Q'),
-        color = alt.Color("src2", scale=scale)
+        color = alt.Color("src2", scale=fake_scale)
     )
 
     death_points = chart.mark_line(
