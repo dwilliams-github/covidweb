@@ -6,6 +6,9 @@ from flask import current_app as app
 import redis, requests, time, pyarrow
 
 
+def connect():
+    return redis.Redis( host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'] )
+
 def fetchGlobal(rconn):
     context = pyarrow.default_serialization_context()
 
@@ -59,7 +62,7 @@ def fetchCountry(rconn,code="US"):
 
 
 def codes():
-    r = redis.Redis()
+    r = connect()
     ckey = fetchGlobal(r)
 
     return {
@@ -68,7 +71,7 @@ def codes():
     }
 
 def menu():
-    r = redis.Redis()
+    r = connect()
     ckey = fetchGlobal(r)
     ckey.sort_values(by="name")
     return {
@@ -77,7 +80,7 @@ def menu():
     }
 
 def plot(code):
-    r = redis.Redis()
+    r = connect()
     dt = fetchCountry(r,code)
     ckey = fetchGlobal(r)
     dt['croll'] = dt.cases.rolling(window=7).mean()

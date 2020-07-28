@@ -5,6 +5,9 @@ from os import path
 from flask import current_app as app
 import redis, requests, time, pyarrow
 
+def connect():
+    return redis.Redis( host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'] )
+
 def fetchData(rconn):
     context = pyarrow.default_serialization_context()
 
@@ -48,7 +51,7 @@ def fetchPopulation(rconn):
 
 
 def menu():
-    r = redis.Redis()
+    r = connect()
     pop = fetchPopulation(r)
 
     return {
@@ -57,45 +60,14 @@ def menu():
     }
 
 
-def fetchCountry(rconn,key):
+def fetchState(rconn,key):
     dt = fetchData(rconn)
     return dt[dt.state==key].sort_values(by="dt")
 
 
-def state(ab="TX",title="Texas",dmin=date(2020,3,11)):
-    dtds = dt[dt.state==ab].sort_values(by="dt")
-    fig,axs = plt.subplots(figsize=(10,9),nrows=2,sharex=True)
-    fig.subplots_adjust(hspace=0.05)
-    ax = axs[0]
-    ax.plot(dtds.dt,dtds.positiveIncrease.rolling(window=7).mean(),"-",label='7 day rolling average')
-    ax.plot(dtds.dt,dtds.positiveIncrease,"-o",label='Daily',linewidth=0.5)
-    ax.xaxis.set_major_formatter(formatter)
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
-    ax.set_ylabel('Confirmed cases')
-    xlo,xhi = ax.get_xlim()
-    ax.set_xlim(dmin,xhi)
-    ax.set_title("{} {}".format(title,date.today()))
-    ax.grid()
-    ax.legend()
-
-    ax = axs[1]
-    ax.plot(dtds.dt,dtds.deathIncrease.rolling(window=7).mean(),"-",label='7 day rolling average')
-    ax.plot(dtds.dt,dtds.deathIncrease,"-o",label='Daily',linewidth=0.5)
-    ax.xaxis.set_major_formatter(formatter)
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Fatalities')
-    xlo,xhi = ax.get_xlim()
-    ax.set_xlim(dmin,xhi)
-    ax.tick_params(axis='x', labelrotation=45)
-    ax.grid()
-
-
-
-
 def plot(code,mode):
-    r = redis.Redis()
-    dt = fetchCountry(r,code)
+    r = connect()
+    dt = fetchState(r,code)
     pop = fetchPopulation(r)
 
     dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
@@ -207,7 +179,7 @@ def plot(code,mode):
 
 
 def top_four_cases():
-    r = redis.Redis()
+    r = connect()
     dt = fetchData(r)
     
     #
@@ -247,7 +219,7 @@ def top_four_cases():
 
 
 def top_five_fatalities():
-    r = redis.Redis()
+    r = connect()
     dt = fetchData(r)
     
     #
@@ -277,13 +249,13 @@ def top_five_fatalities():
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
         width=500, 
-        height=400,
+        height=300,
         title="Top states in 7 day fatalities"
     ).add_selection(selection).to_dict()
 
 
 def top_five_fatalities_capita():
-    r = redis.Redis()
+    r = connect()
     dt = fetchData(r)
     pop = fetchPopulation(r)
 
@@ -317,13 +289,34 @@ def top_five_fatalities_capita():
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
         width=500, 
-        height=400,
+        height=300,
         title="Top states in 7 day fatalities per capita"
     ).add_selection(selection).to_dict()
 
 
+def big_four():
+    r = connect()
+    dt = fetchData(r)
+
+    dtds = dt[dt.state.isin(["TX","CA","NY","FL"])]
+    dtds = dtds[dtds.dt >= pd.to_datetime(date(2002,3,1))]
+
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
+    return alt.Chart(dtds).mark_line(point=True).encode(
+        x = alt.X('dt:T', title="Date"),
+        y = alt.Y('positiveIncrease:Q', title="Daily cases"),
+        color = alt.Color('state:N'),
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(
+        width=500, 
+        height=300
+    ).add_selection(selection).to_dict()
+
+
+
 def death_bar():
-    r = redis.Redis()
+    r = connect()
     dt = fetchData(r)
     pop = fetchPopulation(r)
 

@@ -22,12 +22,19 @@ function county() {
     .then($("#v20 .vega").removeClass("shade"))
     .catch(console.error);
 }
+function countyComposite() {
+    $("#v21 .vega").addClass("shade");
+    vegaEmbed( "#v21 .vega", "/api/county/composite?"+$("#modecompcounty").serialize() )
+    .then($("#v21 .vega").removeClass("shade"))
+    .catch(console.error);
+}
 function renderView(view) {
     switch(view) {
         case 0: return country();
         case 10: return state();
         case 11: return stateComposite();
         case 20: return county();
+        case 21: return countyComposite();
     }
 }
 function refresh() {
@@ -36,11 +43,12 @@ function refresh() {
     });
 }
 $(document).ready(function(){
-    $("#selcountry,#selstate,#modestate,#modecompstate,#selcounty").select2();
+    $("#selcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2();
     $("#selcountry").change(country);
     $("#selstate,#modestate").change(state);
     $("#modecompstate").change(stateComposite);
     $("#selcounty").change(county);
+    $("#modecompcounty").change(countyComposite);
     $("div.menu .option").click(function(){
         $("div.menu .option").removeClass("selected");
         $(this).addClass("selected");

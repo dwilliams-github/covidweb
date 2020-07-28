@@ -75,6 +75,7 @@
             <option value="TC" selected="selected">Top 4 cases</option>
             <option value="TF">Top 5 fatalities</option>
             <option value="TFC">Top 5 fatalities per capita</option>
+            <option value="B4">Big four</option>
             <option value="DB">Fatalities bar by state</option>
           </select>
         </div>
@@ -104,6 +105,25 @@
           <p>Data sources:</p>
           <ul>
             <li>Data from <a href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html" target="_blank">The New York Times</a>, based on reports from state and local health agencies</li>
+          </ul>
+        </div>
+      </div>
+      <div id="v21" class="view hidden">
+        <div class="control">
+          <select name="mode" id="modecompcounty">
+            <option value="B" selected="selected">Favorite counties</option>
+            <option value="SV">Silicon Valley</option>
+            <option value="CC">California cases</option>
+            <option value="CCC">California cases per capita</option>
+          </select>
+        </div>
+        <div class="vega"></div>
+        <div class="sources">
+          <p>Data sources:</p>
+          <ul>
+            <li>Data from <a href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html" target="_blank">The New York Times</a>, based on reports from state and local health agencies</li>
+            <li><a href="https://www.california-demographics.com/counties_by_population">California Counties by Population</a> from Cubit Planning, Inc.</li>
+            <li>Voter registration data from the <a href="https://www.sos.ca.gov/elections/voter-registration/voter-registration-statistics/">California Secretary of State</a></li>
           </ul>
         </div>
       </div>

@@ -24,7 +24,22 @@ def plot_state_composite():
         return jsonify(state.top_five_fatalities_capita())
     if mode == 'DB':
         return jsonify(state.death_bar())
+    if mode == 'B4':
+        return jsonify(state.big_four())
 
 @api.route("/api/county/simple")
 def plot_county_simple():
     return jsonify(county.simple_plot(request.args.get('code','Santa Clara, California')))
+
+    
+@api.route("/api/county/composite")
+def plot_county_composite():
+    mode = request.args.get('mode','B')
+    if mode == 'B':
+        return jsonify(county.both())
+    if mode == 'SV':
+        return jsonify(county.silicon_valley())
+    if mode == "CC":
+        return jsonify(county.california_bar(False))
+    if mode == "CCC":
+        return jsonify(county.california_bar(True))
