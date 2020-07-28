@@ -74,8 +74,9 @@ a:active {
 	margin-bottom: 10px;
 	font-size: 10pt;
 }
-.view .shade {
-	opacity: 20%;
+.view .vega {
+	min-width: 100px;
+	min-height: 100px;
 }
 .view .sources {
 	font-size: 9pt;

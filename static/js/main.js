@@ -1,32 +1,23 @@
+function showPlot(sel,url) {
+    $(sel).LoadingOverlay("show", {background: "rgba(51, 51, 51, 0.8)", imageColor:"grey"});
+    vegaEmbed(sel, url)
+        .then($(sel).LoadingOverlay("hide"))
+        .catch(console.error);
+}
 function country() {
-    $("#v0 .vega").addClass("shade");
-    vegaEmbed( "#v0 .vega", "/api/country/graph?"+$("#selcountry").serialize() )
-    .then($("#v0 .vega").removeClass("shade"))
-    .catch(console.error);
+    showPlot("#v0 .vega", "/api/country/graph?"+$("#selcountry").serialize());
 }
 function state() {
-    $("#v10 .vega").addClass("shade");
-    vegaEmbed( "#v10 .vega", "/api/state/graph?"+$("#selstate").serialize() + "&" + $("#modestate").serialize() )
-    .then($("#v10 .vega").removeClass("shade"))
-    .catch(console.error);
+    showPlot( "#v10 .vega", "/api/state/graph?"+$("#selstate").serialize() + "&" + $("#modestate").serialize() );
 }
 function stateComposite() {
-    $("#v11 .vega").addClass("shade");
-    vegaEmbed( "#v11 .vega", "/api/state/composite?"+$("#modecompstate").serialize() )
-    .then($("#v11 .vega").removeClass("shade"))
-    .catch(console.error);
+    showPlot( "#v11 .vega", "/api/state/composite?"+$("#modecompstate").serialize() );
 }
 function county() {
-    $("#v20 .vega").addClass("shade");
-    vegaEmbed( "#v20 .vega", "/api/county/simple?"+$("#selcounty").serialize() )
-    .then($("#v20 .vega").removeClass("shade"))
-    .catch(console.error);
+    showPlot( "#v20 .vega", "/api/county/simple?"+$("#selcounty").serialize() );
 }
 function countyComposite() {
-    $("#v21 .vega").addClass("shade");
-    vegaEmbed( "#v21 .vega", "/api/county/composite?"+$("#modecompcounty").serialize() )
-    .then($("#v21 .vega").removeClass("shade"))
-    .catch(console.error);
+    showPlot( "#v21 .vega", "/api/county/composite?"+$("#modecompcounty").serialize() );
 }
 function renderView(view) {
     switch(view) {
