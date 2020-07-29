@@ -26,6 +26,8 @@ def plot_state_composite():
         return jsonify(state.death_bar())
     if mode == 'B4':
         return jsonify(state.big_four())
+    return jsonify({'status':'failure'}), 400
+
 
 @api.route("/api/county/simple")
 def plot_county_simple():
@@ -43,3 +45,4 @@ def plot_county_composite():
         return jsonify(county.california_bar(False))
     if mode == "CCC":
         return jsonify(county.california_bar(True))
+    return jsonify({'status':'failure'}), 400
