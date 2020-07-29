@@ -4,19 +4,31 @@ function showPlot(sel,url) {
         .then($(sel).LoadingOverlay("hide"))
         .catch(console.error);
 }
+function makePermalink( vid, controls ) {
+    var items = ['id='+vid];
+    controls.forEach(function(c){
+        items.push(c+"="+encodeURIComponent($("#"+c).val()));
+    });
+    $("#v"+vid+" .permalink a").attr('href',"/?" + items.join("&"));
+}
 function country() {
+    makePermalink(0, ["selcountry"]);
     showPlot("#v0 .vega", "/api/country/graph?"+$("#selcountry").serialize());
 }
 function state() {
+    makePermalink(10, ["selstate","modestate"]);
     showPlot( "#v10 .vega", "/api/state/graph?"+$("#selstate").serialize() + "&" + $("#modestate").serialize() );
 }
 function stateComposite() {
+    makePermalink(11, ["modecompstate"]);
     showPlot( "#v11 .vega", "/api/state/composite?"+$("#modecompstate").serialize() );
 }
 function county() {
+    makePermalink(20, ["selcounty"]);
     showPlot( "#v20 .vega", "/api/county/simple?"+$("#selcounty").serialize() );
 }
 function countyComposite() {
+    makePermalink(21, ["modecompcounty"]);
     showPlot( "#v21 .vega", "/api/county/composite?"+$("#modecompcounty").serialize() );
 }
 function renderView(view) {
@@ -33,7 +45,33 @@ function refresh() {
         renderView( parseInt($(this).attr("id").substring(1)) );
     });
 }
-$(document).ready(function(){
+function selectView(vid) {
+    $("div.menu .option").removeClass("selected");
+    $("#s"+vid).addClass("selected");
+    $(".view").addClass("hidden");
+    $("#v"+vid ).removeClass('hidden');
+    refresh();
+}
+function defaults(params) {
+    var view_id = 0;
+    try {
+        params.split("&").forEach(function(p){
+            let parts = p.split("=");
+            let value = decodeURIComponent(parts[1]);
+            if (parts[0] == "id") {
+                view_id = value;
+            } else {
+                $("#"+parts[0]).val(value);
+            }
+        });
+    } catch(e) {
+        console.log(e);
+    }
+    return view_id;
+}
+$(function(){
+    let view_id = defaults(this.location.search.substr(1));
+
     $("#selcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2();
     $("#selcountry").change(country);
     $("#selstate,#modestate").change(state);
@@ -41,12 +79,8 @@ $(document).ready(function(){
     $("#selcounty").change(county);
     $("#modecompcounty").change(countyComposite);
     $("div.menu .option").click(function(){
-        $("div.menu .option").removeClass("selected");
-        $(this).addClass("selected");
-        $(".view").addClass("hidden");
-        $("#v" + $(this).attr("id").substr(1)).removeClass('hidden');
-        refresh();
+        selectView($(this).attr("id").substr(1));
     });
-    
-    refresh();
+
+    selectView(view_id);
 });

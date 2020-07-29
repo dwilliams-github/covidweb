@@ -12,3 +12,7 @@ def index():
         state_menu = state_menu(),
         county_menu = county_menu()
     )
+
+@main_page.route("/about")
+def about():
+    return render_template("about.html")

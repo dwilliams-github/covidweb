@@ -74,6 +74,11 @@ a:active {
 	margin-bottom: 10px;
 	font-size: 10pt;
 }
+.view .control .permalink {
+	font-size: 8pt;
+	margin-left: 10px;
+	float: right;
+}
 .view .vega {
 	min-width: 100px;
 	min-height: 100px;
@@ -84,6 +89,15 @@ a:active {
 }
 .view .sources p, .view .sources ul {
 	margin: 0;
+}
+.description {
+	font-size: 10pt;
+	max-width: 40em;
+	font-weight: normal;
+}
+.description h2 {
+	font-size: inherit;
+	color: #CCCC66;
 }
 .footer {
 	margin-top: 10px;

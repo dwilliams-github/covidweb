@@ -17,7 +17,7 @@ On linux, consider using docker.
 
 For development, it's handy to include a source watcher while running the server
 ```
-gunicorn --reload --reload-extra-file server/templates/*.html server:app
+gunicorn --reload server:app
 ```
 
 ## Data sources
