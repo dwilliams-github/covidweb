@@ -80,6 +80,8 @@ def plot(code,mode):
 
     title = pop[pop.state==code].NAME.to_string(index=False)
 
+    case_items = ("dt","positiveIncrease","croll","src1","src2")
+
     def case_plot(chart):
         fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
 
@@ -104,16 +106,22 @@ def plot(code,mode):
         # see odd fluctuations due to daily rates.
         #
         dt['froll'] = dt.positiveIncrease.rolling(window=7).mean()/dt.totalTestResultsIncrease.rolling(window=7).mean()
-        chart = alt.Chart(dt)
+        chart = alt.Chart(dt.filter(
+            items = case_items + ("totalTestResultsIncrease","troll","fpos","froll")
+        ))
 
         fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
 
-        case_points = chart.mark_line(point=True).encode(
+        case_points = chart.mark_line(point=True,clip=True).encode(
             x = alt.X("dt:T",title="Date"),
-            y = alt.Y("totalTestResultsIncrease:Q",title="Tests"),
+            y = alt.Y(
+                "totalTestResultsIncrease:Q",
+                title = "Tests",
+                scale = alt.Scale(domain=[0,dt.totalTestResultsIncrease.max()])
+            ),
             color = alt.Color("src1", scale=fake_scale)
         )
-        case_average = chart.mark_line().encode(
+        case_average = chart.mark_line(clip=True).encode(
             x = alt.X('dt:T'),
             y = alt.Y('troll:Q'),
             color = alt.Color("src2", scale=fake_scale)
@@ -121,9 +129,9 @@ def plot(code,mode):
         top = (case_points + case_average).properties(width=500, height=200, title=title)
 
         posit_points = chart.mark_line(
-            point={"color": "lightgrey"}, 
-            color="lightgrey",
-            clip=True
+            point = {"color": "lightgrey"}, 
+            color = "lightgrey",
+            clip = True
         ).encode(
             x = alt.X("dt:T", title="Date"),
             y = alt.Y("fpos:Q",title="Fraction positive",scale=alt.Scale(domain=[0,0.4]))
@@ -138,17 +146,24 @@ def plot(code,mode):
     elif mode == 'H':
         dt['croll'] = dt.positiveIncrease.rolling(window=7).mean()
         dt['hroll'] = dt.hospitalizedCurrently.rolling(window=7).mean()
-        chart = alt.Chart(dt)
+        chart = alt.Chart(dt.filter(
+            items = case_items + ("hospitalizedCurrently","hroll")
+        ))
         top = case_plot(chart)
 
         hospital_points = chart.mark_line(
-            point={"color": "lightgrey"}, 
-            color="lightgrey"
+            point = {"color": "lightgrey"}, 
+            color = "lightgrey",
+            clip = True
         ).encode(
             x = alt.X("dt:T", title="Date"),
-            y = alt.Y("hospitalizedCurrently:Q",title="Hospitalizations")
+            y = alt.Y(
+                "hospitalizedCurrently:Q",
+                title = "Hospitalizations",
+                scale = alt.Scale(domain=[0,dt.hospitalizedCurrently.max()])
+            )
         )
-        hospital_average = chart.mark_line().encode(
+        hospital_average = chart.mark_line(clip=True).encode(
             x = alt.X('dt:T'),
             y = alt.Y('hroll:Q')
         )
@@ -158,17 +173,24 @@ def plot(code,mode):
     else:
         dt['croll'] = dt.positiveIncrease.rolling(window=7).mean()
         dt['droll'] = dt.deathIncrease.rolling(window=7).mean()
-        chart = alt.Chart(dt)
+        chart = alt.Chart(dt.filter(
+            items = case_items + ("deathIncrease","droll")
+        ))
         top = case_plot(chart)
 
         death_points = chart.mark_line(
-            point={"color": "lightgrey"}, 
-            color="lightgrey"
+            point = {"color": "lightgrey"}, 
+            color = "lightgrey",
+            clip = True
         ).encode(
             x = alt.X("dt:T", title="Date"),
-            y = alt.Y("deathIncrease:Q",title="Fatalities")
+            y = alt.Y(
+                "deathIncrease:Q",
+                title = "Fatalities",
+                scale = alt.Scale(domain=[0,dt.deathIncrease.max()])
+            )
         )
-        death_average = chart.mark_line().encode(
+        death_average = chart.mark_line(clip=True).encode(
             x = alt.X('dt:T'),
             y = alt.Y('droll:Q')
         )
@@ -201,16 +223,24 @@ def top_four_cases():
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    top = chart.mark_line(point=True).encode(
+    top = chart.mark_line(point=True, clip=True).encode(
         x = alt.X('dt:T',title="Date"),
-        y = alt.Y('positiveIncrease:Q',title="Daily cases"),
+        y = alt.Y(
+            'positiveIncrease:Q',
+            title = "Daily cases",
+            scale = alt.Scale(domain=[0,dtds.positiveIncrease.max()])
+        ),
         color = 'state:N',
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(width=500, height=200, title="Top states in new cases")
 
-    bottom = chart.mark_line().encode(
+    bottom = chart.mark_line(clip=True).encode(
         x = alt.X('dt:T',title="Date"),
-        y = alt.Y('roll:Q',title="Daily cases, 7 day rolling average"),
+        y = alt.Y(
+            'roll:Q',
+            title = "Daily cases, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.roll.max()])
+        ),
         color = 'state:N',
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(width=500, height=200)
@@ -242,9 +272,13 @@ def top_five_fatalities():
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    return alt.Chart(dtds).mark_line().encode(
+    return alt.Chart(dtds).mark_line(clip=True).encode(
         x = alt.X('dt:T',title="Date"),
-        y = alt.Y('roll:Q',title="Daily fatalities, 7 day rolling average"),
+        y = alt.Y(
+            'roll:Q',
+            title = "Daily fatalities, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.roll.max()])
+        ),
         color = 'state:N',
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
@@ -282,9 +316,13 @@ def top_five_fatalities_capita():
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    return alt.Chart(dtds).mark_line().encode(
+    return alt.Chart(dtds).mark_line(clip=True).encode(
         x = alt.X('dt:T',title="Date"),
-        y = alt.Y('roll:Q',title="Fatalities per 100,000, 7 day rolling average"),
+        y = alt.Y(
+            'roll:Q',
+            title = "Fatalities per 100,000, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.roll.max()])
+        ),
         color = 'state:N',
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
@@ -298,14 +336,18 @@ def big_four():
     r = connect()
     dt = fetchData(r)
 
-    dtds = dt[dt.state.isin(["TX","CA","NY","FL"])]
+    dtds = dt[dt.state.isin(["TX","CA","NY","FL"])].filter(items=("dt","state","positiveIncrease"))
     dtds = dtds[dtds.dt >= pd.to_datetime(date(2002,3,1))]
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    return alt.Chart(dtds).mark_line(point=True).encode(
+    return alt.Chart(dtds).mark_line(point=True, clip=True).encode(
         x = alt.X('dt:T', title="Date"),
-        y = alt.Y('positiveIncrease:Q', title="Daily cases"),
+        y = alt.Y(
+            'positiveIncrease:Q',
+            title = "Daily cases",
+            scale = alt.Scale(domain=[0,dtds.positiveIncrease.max()])
+        ),
         color = alt.Color('state:N'),
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
     ).properties(
@@ -328,6 +370,10 @@ def death_bar():
 
     chart = alt.Chart(latest)
 
+    #
+    # We won't force the axis to start at zero, since a bar of zero
+    # wouldn't be distinguishable from an (accidental) negative value
+    #
     top = chart.mark_bar().encode(
         x = alt.X("state:N",title="State"),
         y = alt.Y("deathIncrease:Q",title="Fatalities")

@@ -1,5 +1,6 @@
 import altair as alt
 import pandas as pd
+import numpy as np
 from datetime import date
 from os import path
 from flask import current_app as app
@@ -161,6 +162,17 @@ def menu():
         'default': "Santa Clara, California"
     }
 
+#
+# We'll allow the axis to float a little negative, but
+# not too far, otherwise it can get ugly. Fall down to the next unit 
+# value, for small statistics.
+#
+def not_too_negative(quantity):
+    return [
+        max(quantity.min(),-np.ceil(0.05*quantity.max())), 
+        quantity.max()
+    ]
+
 def simple_plot(code):
     r = connect()
 
@@ -170,7 +182,9 @@ def simple_plot(code):
     fc['proll'] = fc.dcases.rolling(window=7).mean()
     fc['froll'] = fc.ddeaths.rolling(window=7).mean()
 
-    fc = fc[fc.dt >= pd.to_datetime(date(2020,3,1))]
+    fc = fc[fc.dt >= pd.to_datetime(date(2020,3,1))].filter(
+        items=("dt","dcases","ddeaths","proll","froll")
+    )
 
     fc['src1'] = "Daily"
     fc['src2'] = "7 day"
@@ -179,23 +193,32 @@ def simple_plot(code):
 
     fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
 
-    case_points = chart.mark_line(point=True).encode(
+    case_points = chart.mark_line(point=True, clip=True).encode(
         x = alt.X("dt:T",title="Date"),
-        y = alt.Y("dcases:Q",title="Cases"),
+        y = alt.Y(
+            "dcases:Q",
+            title = "Cases",
+            scale = alt.Scale(domain=not_too_negative(fc.dcases))
+        ),
         color = alt.Color("src1", scale=fake_scale)
     )
-    case_average = chart.mark_line().encode(
+    case_average = chart.mark_line(clip=True).encode(
         x = alt.X('dt:T'),
         y = alt.Y('proll:Q'),
         color = alt.Color("src2", scale=fake_scale)
     )
 
     death_points = chart.mark_line(
-        point={"color": "lightgrey"}, 
-        color="lightgrey"
+        point = {"color": "lightgrey"}, 
+        color = "lightgrey",
+        clip = True
     ).encode(
         x = alt.X("dt:T", title="Date"),
-        y = alt.Y("ddeaths:Q",title="Fatalities"),
+        y = alt.Y(
+            "ddeaths:Q",
+            title = "Fatalities",
+            scale = alt.Scale(domain=not_too_negative(fc.ddeaths))
+        ),
     )
     death_average = chart.mark_line().encode(
         x = alt.X('dt:T'),
@@ -203,9 +226,9 @@ def simple_plot(code):
     )
 
     top = (case_points + case_average).properties(
-        width=500, 
-        height=200,
-        title=code
+        width = 500, 
+        height = 200,
+        title = code
     )
     bot = (death_points + death_average).properties(width=500, height=200)
 
@@ -213,57 +236,102 @@ def simple_plot(code):
 
 def both():
     r = connect()
-    sa = fetchCounty( r, "Oregon", "Marion" )
-    cc = fetchCounty( r, "Massachusetts", "Barnstable" )
-    pl = fetchCounty( r, "Oregon", "Multnomah" )
-    ha = fetchCounty( r, "Texas", "Harris" )
 
     dt_start = pd.to_datetime(date(2020,3,1))
 
-    sa = sa[sa.dt >= dt_start]
-    cc = cc[cc.dt >= dt_start]
-    pl = pl[pl.dt >= dt_start]
-    ha = ha[ha.dt >= dt_start]
+    def fetchHere( r, state, county ):
+        answer = fetchCounty( r, state, county )
+        answer['droll'] = answer.dcases.rolling(window=7).mean()
+        return answer[answer.dt >= dt_start].filter(items=("dt","dcases","droll","county"))
 
-    selection = alt.selection_multi(fields=['county'], bind='legend')
+    sa = fetchHere( r, "Oregon", "Marion" )
+    cc = fetchHere( r, "Massachusetts", "Barnstable" )
+    pl = fetchHere( r, "Oregon", "Multnomah" )
+    ha = fetchHere( r, "Texas", "Harris" )
+
+    dt_top = pd.concat((sa,cc,pl))
+
+    selection = alt.selection_multi(fields=['county'], bind='legend', empty='none')
     scale = alt.Scale(domain=[dt_start,sa.dt.max()])
 
-    top = alt.Chart(pd.concat((sa,cc,pl))).mark_line(point=True).encode(
+    top_points = alt.Chart(dt_top).mark_line(point=True, clip=True).encode(
         x = alt.X("dt:T", title="Date", scale=scale),
-        y = alt.X("dcases:Q", title="Daily cases"),
+        y = alt.Y(
+            "dcases:Q", 
+            title = "Daily cases (7 day)",
+            scale = alt.Scale(domain=not_too_negative(dt_top.dcases))
+        ),
         color = alt.Color("county:N"),
-        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=200)
+        opacity = alt.condition(selection, alt.value(1), alt.value(0))
+    )
 
-    bot = alt.Chart(ha).mark_line(point=True).encode(
+    top_lines = alt.Chart(dt_top).mark_line(clip=True).encode(
         x = alt.X("dt:T", title="Date", scale=scale),
-        y = alt.X("dcases:Q", title="Daily cases"),
+        y = alt.Y("droll:Q"),
+        color = alt.Color("county:N")
+    )
+    
+    top = (top_points + top_lines).properties(width=500, height=200)
+
+    bot_points = alt.Chart(ha).mark_line(point=True, clip=True).encode(
+        x = alt.X("dt:T", title="Date", scale=scale),
+        y = alt.Y(
+            "dcases:Q", 
+            title = "Daily cases (7 day)",
+            scale = alt.Scale(domain=not_too_negative(ha.dcases))
+        ),
         color = alt.Color("county:N"),
-        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=200)
+        opacity = alt.condition(selection, alt.value(1), alt.value(0))
+    )
+
+    bot_lines = alt.Chart(ha).mark_line(clip=True).encode(
+        x = alt.X("dt:T", title="Date", scale=scale),
+        y = alt.Y("droll:Q"),
+        color = alt.Color("county:N")
+    )
+    
+    bot = (bot_points + bot_lines).properties(width=500, height=200)
 
     return (top & bot).add_selection(selection).configure_legend(title=None).to_dict()
 
 
 def silicon_valley():
     r = connect()
-    sc = fetchCounty( r, "California", "Santa Clara" )
-    al = fetchCounty( r, "California", "Alameda" )
 
     dt_start = pd.to_datetime(date(2020,3,1))
 
-    sc = sc[sc.dt >= dt_start]
-    al = al[al.dt >= dt_start]
+    def fetchHere( r, state, county ):
+        answer = fetchCounty( r, state, county )
+        answer['droll'] = answer.dcases.rolling(window=7).mean()
+        return answer[answer.dt >= dt_start].filter(items=("dt","dcases","droll","county"))
 
-    selection = alt.selection_multi(fields=['county'], bind='legend')
-    scale = alt.Scale(domain=[dt_start,sc.dt.max()])
+    dt = pd.concat((
+        fetchHere( r, "California", "Santa Clara" ),
+        fetchHere( r, "California", "Alameda" )
+    ))
+    chart = alt.Chart(dt)
 
-    plot = alt.Chart(pd.concat((sc,al))).mark_line(point=True).encode(
+    selection = alt.selection_multi(fields=['county'], bind='legend', empty='none')
+    scale = alt.Scale(domain=[dt_start,dt.dt.max()])
+
+    points = chart.mark_line(point=True, clip=True).encode(
         x = alt.X("dt:T", title="Date", scale=scale),
-        y = alt.X("dcases:Q", title="Daily cases"),
+        y = alt.X(
+            "dcases:Q", 
+            title = "Daily cases (7 day)",
+            scale = alt.Scale(domain=not_too_negative(dt.dcases))
+        ),
         color = alt.Color("county:N"),
-        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=300)
+        opacity = alt.condition(selection, alt.value(1), alt.value(0))
+    )
+
+    lines = chart.mark_line(clip=True).encode(
+        x = alt.X("dt:T", title="Date", scale=scale),
+        y = alt.X("droll:Q"),
+        color = alt.Color("county:N")
+    )
+    
+    plot = (points+lines).properties(width=500, height=300)
 
     return plot.add_selection(selection).configure_legend(title=None).to_dict()
 
