@@ -25,7 +25,9 @@ def plot_state_composite():
     if mode == 'DB':
         return jsonify(state.death_bar())
     if mode == 'B4':
-        return jsonify(state.big_four())
+        return jsonify(state.big_four_cases())
+    if mode == 'B4F':
+        return jsonify(state.big_four_fatalities())
     return jsonify({'status':'failure'}), 400
 
 

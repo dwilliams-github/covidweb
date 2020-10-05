@@ -72,7 +72,9 @@ function defaults(params) {
 $(function(){
     let view_id = defaults(this.location.search.substr(1));
 
-    $("#selcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2();
+    $("#selcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2({
+        width: '18em'
+    });
     $("#selcountry").change(country);
     $("#selstate,#modestate").change(state);
     $("#modecompstate").change(stateComposite);

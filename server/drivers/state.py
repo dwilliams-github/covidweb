@@ -332,21 +332,25 @@ def top_five_fatalities_capita():
     ).add_selection(selection).to_dict()
 
 
-def big_four():
+def big_four_cases():
     r = connect()
     dt = fetchData(r)
 
     dtds = dt[dt.state.isin(["TX","CA","NY","FL"])].filter(items=("dt","state","positiveIncrease"))
     dtds = dtds[dtds.dt >= pd.to_datetime(date(2002,3,1))]
+    roll = dtds.groupby("state").apply(lambda r: r.positiveIncrease.rolling(window=7).mean())
+    dtds['roll'] = roll.droplevel(0)
+
+    print(dtds.head())
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    return alt.Chart(dtds).mark_line(point=True, clip=True).encode(
+    return alt.Chart(dtds).mark_line(clip=True).encode(
         x = alt.X('dt:T', title="Date"),
         y = alt.Y(
-            'positiveIncrease:Q',
-            title = "Daily cases",
-            scale = alt.Scale(domain=[0,dtds.positiveIncrease.max()])
+            'roll:Q',
+            title = "Daily cases, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.roll.max()])
         ),
         color = alt.Color('state:N'),
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
@@ -355,6 +359,37 @@ def big_four():
         height=300
     ).add_selection(selection).to_dict()
 
+
+
+
+def big_four_fatalities():
+    r = connect()
+    dt = fetchData(r)
+    pop = fetchPopulation(r)
+
+    dtds = dt[dt.state.isin(["TX","CA","NY","FL"])]
+    dtds = dtds[dtds.dt >= pd.to_datetime(date(2002,3,1))]
+
+    dtds = dtds.merge(pop,on="state")
+    roll = dtds.groupby("state").apply(lambda r: r.deathIncrease.rolling(window=7).mean())
+    dtds['ndeath'] = 100000*roll.droplevel(0)/dtds.POPESTIMATE2010
+    dtds = dtds.filter(items=("dt","state","ndeath"))
+
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
+    return alt.Chart(dtds).mark_line(clip=True).encode(
+        x = alt.X('dt:T', title="Date"),
+        y = alt.Y(
+            'ndeath:Q',
+            title = "Fatalities per 100,000, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.ndeath.max()])
+        ),
+        color = alt.Color('state:N'),
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(
+        width=500, 
+        height=300
+    ).add_selection(selection).to_dict()
 
 
 def death_bar():

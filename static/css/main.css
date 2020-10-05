@@ -63,6 +63,9 @@ a:active {
 .menu .option:hover {
 	text-decoration: underline;
 }
+.select2-container--default {
+	font-size: 10pt;
+}
 .hidden {
 	display: none;
 }
