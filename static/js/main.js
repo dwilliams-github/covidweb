@@ -15,6 +15,10 @@ function country() {
     makePermalink(0, ["selcountry"]);
     showPlot("#v0 .vega", "/api/country/graph?"+$("#selcountry").serialize());
 }
+function countryComposite() {
+    makePermalink(1, ["modecompcountry"]);
+    showPlot("#v1 .vega", "/api/country/composite?"+$("#modecompcountry").serialize());
+}
 function state() {
     makePermalink(10, ["selstate","modestate"]);
     showPlot( "#v10 .vega", "/api/state/graph?"+$("#selstate").serialize() + "&" + $("#modestate").serialize() );
@@ -34,6 +38,7 @@ function countyComposite() {
 function renderView(view) {
     switch(view) {
         case 0: return country();
+        case 1: return countryComposite();
         case 10: return state();
         case 11: return stateComposite();
         case 20: return county();
@@ -72,10 +77,11 @@ function defaults(params) {
 $(function(){
     let view_id = defaults(this.location.search.substr(1));
 
-    $("#selcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2({
+    $("#selcountry,#modecompcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2({
         width: '18em'
     });
     $("#selcountry").change(country);
+    $("#modecompcountry").change(countryComposite);
     $("#selstate,#modestate").change(state);
     $("#modecompstate").change(stateComposite);
     $("#selcounty").change(county);

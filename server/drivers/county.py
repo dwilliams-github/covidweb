@@ -167,10 +167,10 @@ def menu():
 # not too far, otherwise it can get ugly. Fall down to the next unit 
 # value, for small statistics.
 #
-def not_too_negative(quantity):
+def not_too_negative(quantity,control):
     return [
         max(quantity.min(),-np.ceil(0.05*quantity.max())), 
-        quantity.max()
+        min(quantity.max(),1.5*control.max())
     ]
 
 def simple_plot(code):
@@ -198,7 +198,7 @@ def simple_plot(code):
         y = alt.Y(
             "dcases:Q",
             title = "Cases",
-            scale = alt.Scale(domain=not_too_negative(fc.dcases))
+            scale = alt.Scale(domain=not_too_negative(fc.dcases,fc.proll))
         ),
         color = alt.Color("src1", scale=fake_scale)
     )
@@ -217,7 +217,7 @@ def simple_plot(code):
         y = alt.Y(
             "ddeaths:Q",
             title = "Fatalities",
-            scale = alt.Scale(domain=not_too_negative(fc.ddeaths))
+            scale = alt.Scale(domain=not_too_negative(fc.ddeaths,fc.froll))
         ),
     )
     death_average = chart.mark_line().encode(
@@ -258,8 +258,8 @@ def both():
         x = alt.X("dt:T", title="Date", scale=scale),
         y = alt.Y(
             "dcases:Q", 
-            title = "Daily cases (7 day)",
-            scale = alt.Scale(domain=not_too_negative(dt_top.dcases))
+            title = "Daily cases, 7 day rolling average",
+            scale = alt.Scale(domain=not_too_negative(dt_top.dcases,dt_top.droll))
         ),
         color = alt.Color("county:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
@@ -277,8 +277,8 @@ def both():
         x = alt.X("dt:T", title="Date", scale=scale),
         y = alt.Y(
             "dcases:Q", 
-            title = "Daily cases (7 day)",
-            scale = alt.Scale(domain=not_too_negative(ha.dcases))
+            title = "Daily cases, 7 day rolling average",
+            scale = alt.Scale(domain=not_too_negative(ha.dcases,ha.droll))
         ),
         color = alt.Color("county:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
@@ -318,8 +318,8 @@ def silicon_valley():
         x = alt.X("dt:T", title="Date", scale=scale),
         y = alt.X(
             "dcases:Q", 
-            title = "Daily cases (7 day)",
-            scale = alt.Scale(domain=not_too_negative(dt.dcases))
+            title = "Daily cases, 7 day rolling average",
+            scale = alt.Scale(domain=not_too_negative(dt.dcases,dt.droll))
         ),
         color = alt.Color("county:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))

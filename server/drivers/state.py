@@ -227,7 +227,7 @@ def top_four_cases():
         x = alt.X('dt:T',title="Date"),
         y = alt.Y(
             'positiveIncrease:Q',
-            title = "Daily cases",
+            title = "Cases",
             scale = alt.Scale(domain=[0,dtds.positiveIncrease.max()])
         ),
         color = 'state:N',
@@ -238,7 +238,59 @@ def top_four_cases():
         x = alt.X('dt:T',title="Date"),
         y = alt.Y(
             'roll:Q',
-            title = "Daily cases, 7 day rolling average",
+            title = "Cases, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.roll.max()])
+        ),
+        color = 'state:N',
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(width=500, height=200)
+
+    return (top & bottom).add_selection(selection).to_dict()
+
+
+def top_four_cases_capita():
+    r = connect()
+    dt = fetchData(r)
+    pop = fetchPopulation(r)
+
+    dt = dt.merge(pop,on="state")
+    dt['cases'] = 100000*dt.positiveIncrease/dt.POPESTIMATE2010
+    
+    #
+    # Reduce dataframe to four worst states, by today's positiveIncrease
+    #
+    worst = dt.loc[:,("state","cases")].groupby("state").first().sort_values(("cases"),ascending=False)
+    dtds = dt[dt.state.isin(worst.index[0:4])]
+
+    #
+    # Use groupby to produce a rolling average per state
+    #
+    dtds = dtds[dtds.dt>=pd.to_datetime(date(2002,3,1))]
+    dtds = dtds.filter(items=("state","dt","cases")).sort_values(by="dt")
+
+    roll = dtds.groupby("state").apply(lambda r: r.cases.rolling(window=7).mean())
+    dtds['roll'] = roll.droplevel(0)
+
+    chart = alt.Chart(dtds)
+
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
+    top = chart.mark_line(point=True, clip=True).encode(
+        x = alt.X('dt:T',title="Date"),
+        y = alt.Y(
+            'cases:Q',
+            title = "Cases per 100,000",
+            scale = alt.Scale(domain=[0,dtds.cases.max()])
+        ),
+        color = 'state:N',
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(width=500, height=200, title="Top states in new cases per capita")
+
+    bottom = chart.mark_line(clip=True).encode(
+        x = alt.X('dt:T',title="Date"),
+        y = alt.Y(
+            'roll:Q',
+            title = "Cases per 100,000, 7 day rolling average",
             scale = alt.Scale(domain=[0,dtds.roll.max()])
         ),
         color = 'state:N',
@@ -332,6 +384,36 @@ def top_five_fatalities_capita():
     ).add_selection(selection).to_dict()
 
 
+def big_four_cases_capita():
+    r = connect()
+    dt = fetchData(r)
+    pop = fetchPopulation(r)
+
+    dt = dt.merge(pop,on="state")
+    dt['cases'] = 100000*dt.positiveIncrease/dt.POPESTIMATE2010
+
+    dtds = dt[dt.state.isin(["TX","CA","NY","FL"])].filter(items=("dt","state","cases"))
+    dtds = dtds[dtds.dt >= pd.to_datetime(date(2002,3,1))]
+    roll = dtds.groupby("state").apply(lambda r: r.cases.rolling(window=7).mean())
+    dtds['roll'] = roll.droplevel(0)
+
+    selection = alt.selection_multi(fields=['state'], bind='legend')
+
+    return alt.Chart(dtds).mark_line(clip=True).encode(
+        x = alt.X('dt:T', title="Date"),
+        y = alt.Y(
+            'roll:Q',
+            title = "Cases per 100,000, 7 day rolling average",
+            scale = alt.Scale(domain=[0,dtds.roll.max()])
+        ),
+        color = alt.Color('state:N'),
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(
+        width=500, 
+        height=300
+    ).add_selection(selection).to_dict()
+
+
 def big_four_cases():
     r = connect()
     dt = fetchData(r)
@@ -341,15 +423,13 @@ def big_four_cases():
     roll = dtds.groupby("state").apply(lambda r: r.positiveIncrease.rolling(window=7).mean())
     dtds['roll'] = roll.droplevel(0)
 
-    print(dtds.head())
-
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
     return alt.Chart(dtds).mark_line(clip=True).encode(
         x = alt.X('dt:T', title="Date"),
         y = alt.Y(
             'roll:Q',
-            title = "Daily cases, 7 day rolling average",
+            title = "Cases, 7 day rolling average",
             scale = alt.Scale(domain=[0,dtds.roll.max()])
         ),
         color = alt.Color('state:N'),

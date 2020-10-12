@@ -20,6 +20,7 @@
     <div class="viewer">
       <div class="menu">
         <div id="s0" class="option selected">Country Overview</div>
+        <div id="s1" class="option">Country Composites</div>
         <div id="s10" class="option">US State Overview</div>
         <div id="s11" class="option">US State Composites</div>
         <div id="s20" class="option">US County Overview</div>
@@ -35,6 +36,23 @@
                 <option value="{{k}}">{{v}}</option>
               {% endif %}
             {% endfor %}
+          </select>
+          <div class="permalink"><a href="">#permalink</a></div>
+        </div>
+        <div class="vega"></div>
+        <div class="sources">
+          <p>Data sources:</p>
+          <ul>
+            <li><a href="https://about-corona.net/" target="_blank">about-corona</a></li>
+          </ul>
+        </div>
+      </div>
+      <div id="v1" class="view hidden">
+        <div class="control">
+          <select name="mode" id="modecompcountry">
+            <option value="NA" selected="selected">US/Canada/Mexico</option>
+            <option value="SC">Scandinavia</option>
+            <option value="EU">France/Germany/Spain/UK</option>
           </select>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
@@ -76,9 +94,11 @@
         <div class="control">
           <select name="mode" id="modecompstate">
             <option value="TC" selected="selected">Top 4 cases</option>
+            <option value="TCC">Top 4 cases per capita</option>
             <option value="TF">Top 5 fatalities</option>
             <option value="TFC">Top 5 fatalities per capita</option>
             <option value="B4">Big four cases</option>
+            <option value="B4C">Big four cases per capita</option>
             <option value="B4F">Big four fatalities per capita</option>
             <option value="DB">Fatalities bar by state</option>
           </select>

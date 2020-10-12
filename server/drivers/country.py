@@ -128,3 +128,51 @@ def plot(code):
     bot = (death_points + death_average).properties(width=500, height=200)
 
     return (top & bot).configure_legend(title=None).to_dict()
+
+
+def countries(codes):
+    r = connect()
+    ckey = fetchGlobal(r)
+
+    def make_one(code):
+        dt = fetchCountry(r,code)
+        ckey0 = ckey[ckey.code == code]
+        dt['croll'] = dt.cases.rolling(window=7).mean()*100000/ckey0.population.mean()
+        dt['droll'] = dt.deaths.rolling(window=7).mean()*100000/ckey0.population.mean()
+        dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
+        dt['Country'] = ckey0.name.iloc[0]
+        return dt
+
+    dt = pd.concat([make_one(c) for c in codes])
+
+    chart = alt.Chart(dt)
+    
+    top = chart.mark_line().encode(
+        x = alt.X('dt:T', title="Date"),
+        y = alt.Y('croll:Q', title="Cases per 100,000"),
+        color = alt.Color("Country:N")
+    ).properties(
+        width=500, 
+        height=200
+    )
+
+    bot = chart.mark_line().encode(
+        x = alt.X('dt:T', title="Date"),
+        y = alt.Y('droll:Q', title="Fatalities per 100,000"),
+        color = alt.Color("Country:N")
+    ).properties(
+        width=500, 
+        height=200
+    )
+
+    return (top & bot).configure_legend(title=None).to_dict()
+
+
+def scandinavia():
+    return countries(['SE','NO','DK'])
+
+def north_america():
+    return countries(['US','CA','MX'])
+
+def europe():
+    return countries(['GB','FR','ES','DE'])
