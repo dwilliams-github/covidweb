@@ -1,0 +1,8 @@
+server {
+    listen 80;
+    server_name covid19.slashdave.com;
+
+    location / {
+        proxy_pass http://unix:/var/run/nginx/flask.sock;
+    }
+}

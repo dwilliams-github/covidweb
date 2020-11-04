@@ -1,0 +1,12 @@
+[Unit]
+Description=Gunicorn service
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/srv/covidweb
+ExecStart=/usr/bin/gunicorn3 --workers 3 --bind unix:/var/run/nginx/flask.sock -m 007 server:app
+
+[Install]
+WantedBy=multi-user.target
