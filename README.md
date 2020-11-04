@@ -26,7 +26,7 @@ Detail | Source | Link
 -- | -- | ---
 County | New York Times | https://github.com/nytimes/covid-19-data
 State | Covid tracking project | https://covidtracking.com
-International | About-Corona | https://about-corona.net/
+International | Our World in Data | https://ourworldindata.org/coronavirus-source-data
 
 ## Architecture
 
