@@ -82,14 +82,15 @@ server {
 
 ```
 # cd /etc/nginx/sites-enabled
+# rm default
 # ln -s ../sites-available/flask .
-# systemctl start nginx
+# systemctl restart nginx
 ```
 
-The web server needs to be up before we can make our cert.
+Note that the web server needs to be up before we can make our cert.
 
 ```
 # certbot --nginx -d covid19.slashdave.com
 ```
 
-This also install a cron job to keep the cert up to date.
+This will also install a cron job to keep the cert up to date.
