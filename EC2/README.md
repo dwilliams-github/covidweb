@@ -76,6 +76,11 @@ server {
 
 
 ```
+# systemctl enable redis
+# systemctl start redis
+```
+
+```
 # systemctl enable gunicorn
 # systemctl start gunicorn
 ```
