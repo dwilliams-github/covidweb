@@ -128,13 +128,18 @@ def plot(code,mode):
         )
         top = (case_points + case_average).properties(width=500, height=200, title=title)
 
+        #
+        # Extend scale if 7 day max is above 0.4 within last two weeks
+        #
+        max_positive = max(dt.froll.tail(14).max(),0.4)
+
         posit_points = chart.mark_line(
             point = {"color": "lightgrey"}, 
             color = "lightgrey",
             clip = True
         ).encode(
             x = alt.X("dt:T", title="Date"),
-            y = alt.Y("fpos:Q",title="Fraction positive",scale=alt.Scale(domain=[0,0.4]))
+            y = alt.Y("fpos:Q",title="Fraction positive",scale=alt.Scale(domain=[0,max_positive]))
         )
         posit_average = chart.mark_line(clip=True).encode(
             x = alt.X('dt:T'),
