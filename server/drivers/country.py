@@ -9,112 +9,66 @@ import redis, requests, time, pyarrow, hashlib
 def connect():
     return redis.Redis( host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'] )
 
+#
+# OurWorldInData has switched to a universal big blob of data
+# See: https://github.com/owid/covid-19-data/tree/master/public/data
+#
+# This means less fetching, but also much higher memory requirements.
+# Switch cache timeout to 30 minutes.
+#
 def fetchGlobal(rconn):
     context = pyarrow.default_serialization_context()
 
     #
-    # Returned cached value, if no more than 10 minutes old
+    # Returned cached value, if no more than 30 minutes old
     #
-    expires = rconn.hget("country2","expires")
+    expires = rconn.hget("country3","expires")
     if expires and time.time() < float(expires):
-        return context.deserialize(rconn.hget("country2","dataframe"))
+        return context.deserialize(rconn.hget("country3","dataframe"))
 
     #
     # Fetch
     #
-    answer = pd.read_csv("https://covid.ourworldindata.org/data/ecdc/locations.csv")
-    answer['code'] = answer['countriesAndTerritories']
-    answer = answer.rename(columns={'location':'name'})
+    answer = pd.read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv",parse_dates=["date"])
 
     #
     # Cache
     #
-    rconn.hset("country2","dataframe",context.serialize(answer).to_buffer().to_pybytes())
-    rconn.hset("country2","expires",str(time.time()+600.0))
+    rconn.hset("country3","dataframe",context.serialize(answer).to_buffer().to_pybytes())
+    rconn.hset("country3","expires",str(time.time()+3000.0))
     return answer
 
-
-#
-# For ourworldindata, tables are returned for all countries,
-# since this method now fetches all countries, and simply
-# extracts the relative information from the appropriate tables. 
-#
-def fetchCases(rconn):
-    context = pyarrow.default_serialization_context()
-
-    #
-    # Returned cached value, if no more than 10 minutes old
-    #
-    expires = rconn.hget("country2cases","expires")
-    if expires and time.time() < float(expires):
-        return context.deserialize(rconn.hget("country2cases","dataframe"))
-
-    answer = pd.read_csv("https://covid.ourworldindata.org/data/ecdc/new_cases.csv",parse_dates=["date"])
-
-    #
-    # Cache
-    #
-    rconn.hset("country2cases","dataframe",context.serialize(answer).to_buffer().to_pybytes())
-    rconn.hset("country2cases","expires",str(time.time()+600.0))
-    return answer
-
-def fetchDeaths(rconn):
-    context = pyarrow.default_serialization_context()
-
-    #
-    # Returned cached value, if no more than 10 minutes old
-    #
-    expires = rconn.hget("country2deaths","expires")
-    if expires and time.time() < float(expires):
-        return context.deserialize(rconn.hget("country2deaths","dataframe"))
-
-    answer = pd.read_csv("https://covid.ourworldindata.org/data/ecdc/new_deaths.csv",parse_dates=["date"])
-
-    #
-    # Cache
-    #
-    rconn.hset("country2deaths","dataframe",context.serialize(answer).to_buffer().to_pybytes())
-    rconn.hset("country2deaths","expires",str(time.time()+600.0))
-    return answer
-
-    
-def fetchCountry(rconn,name="United States"):
-    cases = fetchCases(rconn)
-    deaths = fetchDeaths(rconn)
-
-    cases['cases'] = cases[name].fillna(0).astype(int)
-    deaths['deaths'] = deaths[name].fillna(0).astype(int)
-
-    cases = cases.filter(items=("date","cases"))
-    deaths = deaths.filter(items=("date","deaths"))
-
-    return cases.merge(deaths,on="date").sort_values(by="date")
+def fetchStats(rconn):
+    blob = fetchGlobal(rconn)
+    answer = blob.filter(items=("iso_code","location","population")).drop_duplicates(subset="iso_code")
+    return answer.rename(columns={
+        'iso_code': 'code',
+        'location': 'name'
+    })
 
 
-def codes():
-    r = connect()
-    ckey = fetchGlobal(r)
+def fetchCountry(rconn,code="USA"):
+    blob = fetchGlobal(rconn)
 
-    return {
-        'abbrev': dict(zip(ckey.code,ckey.name)),
-        'default': "United_States_of_America"
-    }
+    answer = blob[blob.iso_code==code].filter(items=("date","new_cases","new_deaths"))
+    answer = answer.rename(columns={"new_cases": "cases", "new_deaths": "deaths"})
 
+    return answer.sort_values(by="date")
 
 def menu():
-    r = connect()
-    ckey = fetchGlobal(r)
-    ckey.sort_values(by="name")
+    blob = fetchGlobal(connect())
+    answer = blob.filter(items=("iso_code","location")).drop_duplicates(subset="iso_code")
+
     return {
-        'abbrev': dict(zip(ckey.code,ckey.name)),
-        'default': "United_States_of_America"
+        'abbrev': dict(zip(answer.iso_code,answer.location)),
+        'default': "USA"
     }
 
 
 def plot(code):
     r = connect()
-    ckey = fetchGlobal(r)
-    dt = fetchCountry(r,ckey[ckey.code==code].name)
+    ckey = fetchStats(r)
+    dt = fetchCountry(r,code)
 
     dt['croll'] = dt.cases.rolling(window=7).mean()
     dt['droll'] = dt.deaths.rolling(window=7).mean()
@@ -163,20 +117,21 @@ def plot(code):
     return (top & bot).configure_legend(title=None).to_dict()
 
 
-def countries(names):
+def countries(codes):
     r = connect()
-    ckey = fetchGlobal(r)
+    ckey = fetchStats(r)
 
-    def make_one(name):
-        dt = fetchCountry(r,name)
-        ckey0 = ckey[ckey.name == name]
+    def make_one(code):
+        dt = fetchCountry(r,code)
+        ckey0 = ckey[ckey.code == code]
         dt['croll'] = dt.cases.rolling(window=7).mean()*100000/ckey0.population.mean()
         dt['droll'] = dt.deaths.rolling(window=7).mean()*100000/ckey0.population.mean()
         dt = dt[dt.date >= pd.to_datetime(date(2020,3,1))]
-        dt['Country'] = name
+        dt['Country'] = ckey0.name.iat[0]
         return dt
 
-    dt = pd.concat([make_one(c) for c in names])
+    dt = pd.concat([make_one(c) for c in codes])
+    print(dt.head())
 
     chart = alt.Chart(dt)
     
@@ -202,10 +157,10 @@ def countries(names):
 
 
 def scandinavia():
-    return countries(['Sweden','Norway','Denmark'])
+    return countries(['SWE','NOR','DNK'])
 
 def north_america():
-    return countries(['United States','Canada','Mexico'])
+    return countries(['USA','CAN','MEX'])
 
 def europe():
-    return countries(['United Kingdom','France','Spain','Germany'])
+    return countries(['GBR','FRA','ESP','DEU'])
