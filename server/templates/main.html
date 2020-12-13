@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
+    <meta name="description" content="COVID-19 Plots" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
     <title>COVID-19</title>
     <link rel="shortcut icon" href="assets/favicon.png" />
     <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
@@ -15,10 +18,17 @@
     <script src="/js/main.js"></script>
   </head>
   <body>
-    <div class="banner">COVID-19</div>
-    <div class="bannercaption">A collection of plots</div>
+    <div class="top">
+      <button class="menu-icon" type="button" id="menu-icon">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+      <div class="banner">COVID-19</div>
+      <div class="bannercaption">A collection of plots</div>
+    </div>
     <div class="viewer">
-      <div class="menu">
+      <div class="menu" id="menu">
         <div id="s0" class="option selected">Country Overview</div>
         <div id="s1" class="option">Country Composites</div>
         <div id="s10" class="option">US State Overview</div>

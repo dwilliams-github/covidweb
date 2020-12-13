@@ -57,20 +57,26 @@ function selectView(vid) {
     $("#v"+vid ).removeClass('hidden');
     refresh();
 }
+function toggleMenu() {
+    if ($("#menu-icon").css("display") != "block") return;
+    $("#menu").toggleClass("menuhide");
+}
 function defaults(params) {
     var view_id = 0;
-    try {
-        params.split("&").forEach(function(p){
-            let parts = p.split("=");
-            let value = decodeURIComponent(parts[1]);
-            if (parts[0] == "id") {
-                view_id = value;
-            } else {
-                $("#"+parts[0]).val(value);
-            }
-        });
-    } catch(e) {
-        console.log(e);
+    if (params) {
+        try {
+            params.split("&").forEach(function(p){
+                let parts = p.split("=");
+                let value = decodeURIComponent(parts[1]);
+                if (parts[0] == "id") {
+                    view_id = value;
+                } else {
+                    $("#"+parts[0]).val(value);
+                }
+            });
+        } catch(e) {
+            console.log(e);
+        }
     }
     return view_id;
 }
@@ -88,7 +94,9 @@ $(function(){
     $("#modecompcounty").change(countyComposite);
     $("div.menu .option").click(function(){
         selectView($(this).attr("id").substr(1));
+        toggleMenu();
     });
+    $("#menu-icon").click(toggleMenu);
 
     selectView(view_id);
 });

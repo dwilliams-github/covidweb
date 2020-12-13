@@ -2,8 +2,9 @@ body {
 	font-family: 'Open Sans', sans-serif;
 	background: #333333;		
 	color: #CCCCCC;
-	margin: 20px;
 	padding: 0;
+	margin: 0;
+	width: 100%;
 }
 sup { font-size: 60%; }
 a,
@@ -24,25 +25,32 @@ a:active {
 	text-decoration:none;
 	outline: none;
 }
+.top {
+	position: relative;
+	width: 100%;
+}
 .banner {
-	color:#CC9933;
-	font-size:30pt;
-	font-weight:bold;
+	color: #CC9933;
+	font-size: 30pt;
+	font-weight: bold;
+	margin-left: 20px;
+	padding-top: 20px;
 }
 .bannercaption {
-	font-weight:bold;
-	background:#333;
-	margin-bottom: 15px;
-	margin-top: 4px;
+	font-weight: bold;
+	background: #333;
+	margin: 4px 0 15px 20px;
 }
 .viewer {
 	display: flex;
+	margin-left: 20px;
 }
 .menu {
 	background: #444444;
 	display: block;
 	padding: 10px 20px;
 	min-height: 500px;
+	margin-right: 20px;
 }
 .menu .option {
 	font-size: 10pt;
@@ -70,7 +78,8 @@ a:active {
 	display: none;
 }
 .view {
-	padding: 10px 20px;
+	padding: 10px 10px 0 0;
+	width: auto;
 }
 .view .control {
 	display: block;
@@ -85,6 +94,7 @@ a:active {
 .view .vega {
 	min-width: 100px;
 	min-height: 100px;
+	width: auto;
 }
 .view .sources {
 	font-size: 9pt;
@@ -104,9 +114,49 @@ a:active {
 }
 .footer {
 	margin-top: 10px;
+	margin-left: 20px;
 	font-size: 9pt;
 }
 .copyright {
 	font-size: 0.7em;
 	color: rgb(133, 133, 133);
+}
+button.menu-icon {
+    display: none;
+}
+.menuhide {
+	display: block !important;
+}
+@media only screen and (max-width: 960px) {
+	.viewer {
+		display: block;
+	}
+    .menu {
+        display: none;
+        position: absolute;
+        top: 4em;
+        right: 1.2em;
+        border: 1px solid #222;
+		width: auto;
+		z-index: 10;
+		margin-right: 0;
+		min-height: auto;
+    }
+    button.menu-icon {
+        background-color: #212121;
+        display: block;
+		position: absolute;
+		top: 2em;
+        right: 2em;
+        padding: 1px;
+        border: 1px solid #CCCC66;
+    }
+    button.menu-icon .bar {
+        display: block;
+        background-color: #CCCC66;
+        width: 2em;
+        height: 4px;
+        border: 2px solid #212121;
+        border-radius: 2px;
+    }
 }

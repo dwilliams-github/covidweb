@@ -29,13 +29,18 @@ def fetchGlobal(rconn):
     #
     # Fetch
     #
-    answer = pd.read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv",parse_dates=["date"])
+    answer = pd.read_csv(
+        "https://covid.ourworldindata.org/data/owid-covid-data.csv",
+        parse_dates=["date"]
+    ).filter(
+        items=("iso_code","location","population","date","new_cases","new_deaths")
+    )
 
     #
     # Cache
     #
     rconn.hset("country3","dataframe",context.serialize(answer).to_buffer().to_pybytes())
-    rconn.hset("country3","expires",str(time.time()+3000.0))
+    rconn.hset("country3","expires",str(time.time()+1800.0))
     return answer
 
 def fetchStats(rconn):
@@ -131,7 +136,6 @@ def countries(codes):
         return dt
 
     dt = pd.concat([make_one(c) for c in codes])
-    print(dt.head())
 
     chart = alt.Chart(dt)
     

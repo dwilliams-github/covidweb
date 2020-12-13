@@ -224,22 +224,9 @@ def top_four_cases():
     roll = dtds.groupby("state").apply(lambda r: r.positiveIncrease.rolling(window=7).mean())
     dtds['roll'] = roll.droplevel(0)
 
-    chart = alt.Chart(dtds)
-
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    top = chart.mark_line(point=True, clip=True).encode(
-        x = alt.X('dt:T',title="Date"),
-        y = alt.Y(
-            'positiveIncrease:Q',
-            title = "Cases",
-            scale = alt.Scale(domain=[0,dtds.positiveIncrease.max()])
-        ),
-        color = 'state:N',
-        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=200, title="Top states in new cases")
-
-    bottom = chart.mark_line(clip=True).encode(
+    return alt.Chart(dtds).mark_line(clip=True).encode(
         x = alt.X('dt:T',title="Date"),
         y = alt.Y(
             'roll:Q',
@@ -248,9 +235,11 @@ def top_four_cases():
         ),
         color = 'state:N',
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=200)
-
-    return (top & bottom).add_selection(selection).to_dict()
+    ).properties(
+        width=500,
+        height=300,
+        title="Top states in new cases"
+    ).add_selection(selection).to_dict()
 
 
 def top_four_cases_capita():
@@ -276,22 +265,9 @@ def top_four_cases_capita():
     roll = dtds.groupby("state").apply(lambda r: r.cases.rolling(window=7).mean())
     dtds['roll'] = roll.droplevel(0)
 
-    chart = alt.Chart(dtds)
-
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
-    top = chart.mark_line(point=True, clip=True).encode(
-        x = alt.X('dt:T',title="Date"),
-        y = alt.Y(
-            'cases:Q',
-            title = "Cases per 100,000",
-            scale = alt.Scale(domain=[0,dtds.cases.max()])
-        ),
-        color = 'state:N',
-        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=200, title="Top states in new cases per capita")
-
-    bottom = chart.mark_line(clip=True).encode(
+    return alt.Chart(dtds).mark_line(clip=True).encode(
         x = alt.X('dt:T',title="Date"),
         y = alt.Y(
             'roll:Q',
@@ -300,9 +276,11 @@ def top_four_cases_capita():
         ),
         color = 'state:N',
         opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
-    ).properties(width=500, height=200)
-
-    return (top & bottom).add_selection(selection).to_dict()
+    ).properties(
+        width=500, 
+        height=300, 
+        title="Top states in new cases per capita"
+    ).add_selection(selection).to_dict()
 
 
 def top_five_fatalities():
