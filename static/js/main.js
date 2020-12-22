@@ -1,8 +1,17 @@
+var sequence = 0;
 function showPlot(sel,url) {
-    $(sel).LoadingOverlay("show", {background: "rgba(51, 51, 51, 0.8)", imageColor:"grey"});
-    vegaEmbed(sel, url)
-        .then($(sel).LoadingOverlay("hide"))
-        .catch(console.error);
+    sequence += 1;
+    const this_sequence = sequence;
+    $(sel).LoadingOverlay("show", {
+        background: "rgba(51, 51, 51, 0.8)", 
+        imageColor: "grey",
+        zIndex: 2
+    });
+    customVegaEmbed(sel, url, {
+        abort: function(){return sequence != this_sequence;}
+    }).then(function(){
+        $(sel).LoadingOverlay("hide", true);
+    }).catch(console.error);
 }
 function makePermalink( vid, controls ) {
     var items = ['id='+vid];
@@ -97,6 +106,7 @@ $(function(){
         toggleMenu();
     });
     $("#menu-icon").click(toggleMenu);
+    $(".reload").click(refresh);
 
     selectView(view_id);
 });

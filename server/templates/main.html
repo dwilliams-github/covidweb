@@ -8,13 +8,14 @@
     <link rel="shortcut icon" href="assets/favicon.png" />
     <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/vega-embed.css">
     <link rel="stylesheet" href="/css/select2.min.css">
     <script src="/js/jquery-3.5.1.min.js"></script>
     <script src="/js/select2.min.js"></script>
     <script src="/js/loadingoverlay.min.js"></script>
     <script src="/js/vega.js"></script>
     <script src="/js/vega-lite.js"></script>
-    <script src="/js/vega-embed.js"></script>
+    <script src="/js/custom-vega-embed.js"></script>
     <script src="/js/main.js"></script>
   </head>
   <body>
@@ -47,6 +48,7 @@
               {% endif %}
             {% endfor %}
           </select>
+          <div class="reload">⟳</div>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
         <div class="vega"></div>
@@ -64,6 +66,7 @@
             <option value="SC">Scandinavia</option>
             <option value="EU">France/Germany/Spain/UK</option>
           </select>
+          <div class="reload">⟳</div>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
         <div class="vega"></div>
@@ -90,6 +93,7 @@
             <option value="H">Cases/Hospitalizations</option>
             <option value="T">Tests/Positives</option>
           </select>
+          <div class="reload">⟳</div>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
         <div class="vega"></div>
@@ -112,6 +116,7 @@
             <option value="B4F">Big four fatalities per capita</option>
             <option value="DB">Fatalities bar by state</option>
           </select>
+          <div class="reload">⟳</div>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
         <div class="vega"></div>
@@ -134,6 +139,7 @@
               {% endif %}
             {% endfor %}
           </select>
+          <div class="reload">⟳</div>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
         <div class="vega"></div>
@@ -152,6 +158,7 @@
             <option value="CC">California cases</option>
             <option value="CCC">California cases per capita</option>
           </select>
+          <div class="reload">⟳</div>
           <div class="permalink"><a href="">#permalink</a></div>
         </div>
         <div class="vega"></div>

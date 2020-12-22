@@ -33,7 +33,6 @@ International | Our World in Data | https://ourworldindata.org/coronavirus-sourc
 The client is presented with a single dynamic html page. Selections are
 presented in DHTML controlled entirely in javascript implemented with jquery.
 
-
 ## Technology
 
 This web app uses a python3 backend, powered by gunicorn/flask, with an 
