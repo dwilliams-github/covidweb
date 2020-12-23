@@ -126,7 +126,6 @@ function customVegaEmbed( target, url, opts ) {
                             $(this).attr('width',opts.width);
                             $(this).attr('height',scale*height);
                         })
-                        console.log(opts.width,$(workspace).children('svg').width())
                     }
                     test_abort();
                     $(target).empty().append(workspace);
