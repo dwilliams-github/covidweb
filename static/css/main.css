@@ -171,5 +171,8 @@ button.menu-icon {
         height: 4px;
         border: 2px solid #212121;
         border-radius: 2px;
-    }
+	}
+	.vega-embed.has-actions {
+		padding-right:34px !important;
+	}
 }

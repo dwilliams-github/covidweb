@@ -8,7 +8,8 @@ function showPlot(sel,url) {
         zIndex: 2
     });
     customVegaEmbed(sel, url, {
-        abort: function(){return sequence != this_sequence;}
+        abort: function(){return sequence != this_sequence;},
+        width: Math.min($(window).width()-60,640)
     }).then(function(){
         $(sel).LoadingOverlay("hide", true);
     }).catch(console.error);

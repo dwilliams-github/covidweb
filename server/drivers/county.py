@@ -230,7 +230,10 @@ def simple_plot(code):
         height = 200,
         title = code
     )
-    bot = (death_points + death_average).properties(width=500, height=200)
+    bot = (death_points + death_average).properties(
+        width = 500, 
+        height = 200
+    )
 
     return (top & bot).configure_legend(title=None).to_dict()
 

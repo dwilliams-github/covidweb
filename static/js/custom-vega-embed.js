@@ -113,12 +113,21 @@ function customVegaEmbed( target, url, opts ) {
                 var spec = vegaLite.compile(data, {}).spec;
                 test_abort();
                 view = new vega.View(vega.parse(spec),{
-                    renderer: 'canvas',
+                    renderer: 'svg',
                     container: workspace.get(0)
                 });
                 test_abort();
                 view.runAsync().then(function(){
                     addActions(view,workspace,data,spec);
+                    if (opts.width) {
+                        $(workspace).children('svg').each(function(){
+                            const height = $(this).attr('height');
+                            const scale = opts.width / $(this).attr('width');
+                            $(this).attr('width',opts.width);
+                            $(this).attr('height',scale*height);
+                        })
+                        console.log(opts.width,$(workspace).children('svg').width())
+                    }
                     test_abort();
                     $(target).empty().append(workspace);
                     resolve(view)
