@@ -33,6 +33,14 @@ International | Our World in Data | https://ourworldindata.org/coronavirus-sourc
 The client is presented with a single dynamic html page. Selections are
 presented in DHTML controlled entirely in javascript implemented with jquery.
 
+## Vega-Embed
+
+A modified and limited version of Vega-Embed is included. This version
+was modified from the original TypeScript and is not recommended for
+any other application.
+
+See: https://github.com/vega/vega-embed/blob/master/LICENSE
+
 ## Technology
 
 This web app uses a python3 backend, powered by gunicorn/flask, with an 
