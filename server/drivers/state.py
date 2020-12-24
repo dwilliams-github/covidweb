@@ -32,6 +32,31 @@ def fetchData(rconn):
     return dt
 
 
+def fetchVaccine(rconn):
+    context = pyarrow.default_serialization_context()
+
+    #
+    # Check date of main dataframe
+    #
+    expires = rconn.hget("statevac","expires")
+    if expires and time.time() < float(expires):
+        return context.deserialize(rconn.hget("statevac","dataframe"))
+
+    #
+    # Fetch new copy
+    #
+    dt = pd.read_csv("https://raw.githubusercontent.com/govex/COVID-19/master/data_tables/vaccine_data/raw_data/vaccine_data_us_state_timeline.csv")
+    dt['dt'] = pd.to_datetime(dt.date,format="%m/%d/%Y")
+    dt = dt.filter(items=("dt","stabbr","doses_shipped_total","doses_admin_total","people_total"))
+
+    #
+    # Save
+    #
+    rconn.hset("statevac","dataframe",context.serialize(dt).to_buffer().to_pybytes())
+    rconn.hset("statevac","expires",str(time.time()+600.0))
+    return dt
+
+
 def fetchPopulation(rconn):
     context = pyarrow.default_serialization_context()
     if rconn.hexists("state","population"):
@@ -203,6 +228,89 @@ def plot(code,mode):
         bot = (death_points + death_average).properties(width=500, height=200)
 
     return (top & bot).configure_legend(title=None).to_dict()
+
+
+def vaccines(code):
+    r = connect()
+    dt = fetchVaccine(r)
+    dt = dt[dt.dt >= pd.to_datetime(date(2020,12,1))]
+    dt = dt[dt.stabbr==code]
+
+    pop = fetchPopulation(r)
+
+    title = pop[pop.state==code].NAME.to_string(index=False)
+    capita = pop[pop.state==code].POPESTIMATE2010.max()
+
+    dt['dosecap'] = dt.doses_shipped_total/capita
+    dt['peoplecap'] = dt.people_total/capita
+
+    chart = alt.Chart(dt)
+
+    #
+    # We want dual y axes, but with just a scaling factor
+    # (so a single plot line).
+    #
+    # Altair doesn't support this, so instead we can
+    # pretend we are plotting independent values, but explicitly 
+    # set y axis limits consistently
+    #
+    # Note: it is important to set nice=False to override padding
+    #
+    # Be careful not to include a NaN in the scale domain, as
+    # this produces bad json objects.
+    #
+    y_max = dt.doses_shipped_total.append(pd.Series([0])).max()*1.05
+
+    scale1 = chart.mark_line().encode(
+        x = alt.X("dt:T", title="Date"),
+        y = alt.Y("doses_shipped_total:Q", 
+            title = "Total shipped",
+            scale = alt.Scale(domain=[0,y_max], nice=False)
+        )
+    )
+    scale2 = chart.mark_line(opacity=0).encode(
+        x = alt.X("dt:T", title="Date"),
+        y = alt.Y("dosecap:Q", 
+            title = "Total shipped, per capita", 
+            axis = alt.Axis(format='%'),
+            scale = alt.Scale(domain=[0,y_max/capita], nice=False)
+        )
+    )
+
+    top = alt.layer(scale1,scale2).resolve_scale(
+        y = 'independent'
+    ).properties(
+        width = 500, 
+        height = 200,
+        title = title
+    )
+
+    y_max = dt.people_total.append(pd.Series([0])).max()*1.05
+
+    scale1 = chart.mark_line().encode(
+        x = alt.X("dt:T", title="Date"),
+        y = alt.Y("people_total:Q", 
+            title = "Total dosed",
+            scale = alt.Scale(domain=[0,y_max], nice=False)
+        )
+    )
+    scale2 = chart.mark_line(opacity=0).encode(
+        x = alt.X("dt:T", title="Date"),
+        y = alt.Y("peoplecap:Q",
+            title="Total dosed, per capita",
+            axis=alt.Axis(format='%'),
+            scale = alt.Scale(domain=[0,y_max/capita], nice=False)
+        )
+    )
+
+    bot = alt.layer(scale1,scale2).resolve_scale(
+        y = 'independent'
+    ).properties(
+        width = 500,
+        height = 200
+    )
+
+    return (top & bot).to_dict()
 
 
 def top_four_cases():

@@ -22,7 +22,12 @@ def plot_country_composite():
     
 @api.route("/api/state/graph")
 def plot_state():
-    return jsonify(state.plot(request.args.get('code','US'), request.args.get('mode','D')))
+    code = request.args.get('code','US')
+    mode = request.args.get('mode','D')
+    if mode == 'V':
+        return jsonify(state.vaccines(code))
+    else:
+        return jsonify(state.plot(code,mode))
 
     
 @api.route("/api/state/composite")
