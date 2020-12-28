@@ -46,8 +46,9 @@ def fetchVaccine(rconn):
     # Fetch new copy
     #
     dt = pd.read_csv("https://raw.githubusercontent.com/govex/COVID-19/master/data_tables/vaccine_data/raw_data/vaccine_data_us_state_timeline.csv")
-    dt['dt'] = pd.to_datetime(dt.date,format="%m/%d/%Y")
+    dt['dt'] = pd.to_datetime(dt.date,format="%m/%d/%y",errors='coerce')
     dt = dt.filter(items=("dt","stabbr","doses_shipped_total","doses_admin_total","people_total"))
+    dt = dt.sort_values(by="dt")
 
     #
     # Save
@@ -361,7 +362,7 @@ def top_four_cases_capita():
     #
     # Reduce dataframe to four worst states, by today's positiveIncrease
     #
-    worst = dt.loc[:,("state","cases")].groupby("state").first().sort_values(("cases"),ascending=False)
+    worst = dt.loc[:,("state","cases","positiveIncrease")].groupby("state").first().sort_values(("cases"),ascending=False)
     dtds = dt[dt.state.isin(worst.index[0:4])]
 
     #
