@@ -9,7 +9,7 @@ function showPlot(sel,url) {
     });
     customVegaEmbed(sel, url, {
         abort: function(){return sequence != this_sequence;},
-        width: Math.min($(window).width()-60,640)
+        maxwidth: Math.min($(window).width()-60,640)
     }).then(function(){
         $(sel).LoadingOverlay("hide", true);
     }).catch(console.error);
