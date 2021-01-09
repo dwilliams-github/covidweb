@@ -39,15 +39,15 @@ def fetchVaccine(rconn):
     # Check date of main dataframe
     #
     expires = rconn.hget("statevac","expires")
-    if expires and time.time() < float(expires):
-        return context.deserialize(rconn.hget("statevac","dataframe"))
+    #if expires and time.time() < float(expires):
+    #    return context.deserialize(rconn.hget("statevac","dataframe"))
 
     #
     # Fetch new copy
     #
     dt = pd.read_csv("https://raw.githubusercontent.com/govex/COVID-19/master/data_tables/vaccine_data/raw_data/vaccine_data_us_state_timeline.csv")
-    dt['dt'] = pd.to_datetime(dt.date,format="%m/%d/%y",errors='coerce')
-    dt = dt.filter(items=("dt","stabbr","doses_shipped_total","doses_admin_total","people_total"))
+    dt['dt'] = pd.to_datetime(dt.date,format="%m/%d/%Y",errors='coerce')
+    dt = dt.filter(items=("dt","stabbr","doses_alloc_total","doses_shipped_total","doses_admin_total","people_total"))
     dt = dt.sort_values(by="dt")
 
     #
@@ -243,7 +243,10 @@ def vaccines(code):
     capita = pop[pop.state==code].POPESTIMATE2010.max()
 
     dt['dosecap'] = dt.doses_shipped_total/capita
-    dt['peoplecap'] = dt.people_total/capita
+    dt['alloccap'] = dt.doses_alloc_total/capita
+    dt['peoplecap'] = dt.doses_admin_total/capita
+
+    print(dt.head())
 
     chart = alt.Chart(dt)
 
@@ -260,23 +263,42 @@ def vaccines(code):
     # Be careful not to include a NaN in the scale domain, as
     # this produces bad json objects.
     #
-    y_max = dt.doses_shipped_total.append(pd.Series([0])).max()*1.05
+    if (dt.doses_shipped_total.sum() == 0):
+        y_max = dt.doses_alloc_total.append(pd.Series([0])).max()*1.05
 
-    scale1 = chart.mark_line().encode(
-        x = alt.X("dt:T", title="Date"),
-        y = alt.Y("doses_shipped_total:Q", 
-            title = "Total shipped",
-            scale = alt.Scale(domain=[0,y_max], nice=False)
+        scale1 = chart.mark_line().encode(
+            x = alt.X("dt:T", title="Date"),
+            y = alt.Y("doses_alloc_total:Q", 
+                title = "Total allocated",
+                scale = alt.Scale(domain=[0,y_max], nice=False)
+            )
         )
-    )
-    scale2 = chart.mark_line(opacity=0).encode(
-        x = alt.X("dt:T", title="Date"),
-        y = alt.Y("dosecap:Q", 
-            title = "Total shipped, per capita", 
-            axis = alt.Axis(format='%'),
-            scale = alt.Scale(domain=[0,y_max/capita], nice=False)
+        scale2 = chart.mark_line(opacity=0).encode(
+            x = alt.X("dt:T", title="Date"),
+            y = alt.Y("alloccap:Q", 
+                title = "Total allocated, per capita", 
+                axis = alt.Axis(format='%'),
+                scale = alt.Scale(domain=[0,y_max/capita], nice=False)
+            )
         )
-    )
+    else:
+        y_max = dt.doses_shipped_total.append(pd.Series([0])).max()*1.05
+
+        scale1 = chart.mark_line().encode(
+            x = alt.X("dt:T", title="Date"),
+            y = alt.Y("doses_shipped_total:Q", 
+                title = "Total shipped",
+                scale = alt.Scale(domain=[0,y_max], nice=False)
+            )
+        )
+        scale2 = chart.mark_line(opacity=0).encode(
+            x = alt.X("dt:T", title="Date"),
+            y = alt.Y("dosecap:Q", 
+                title = "Total shipped, per capita", 
+                axis = alt.Axis(format='%'),
+                scale = alt.Scale(domain=[0,y_max/capita], nice=False)
+            )
+        )
 
     top = alt.layer(scale1,scale2).resolve_scale(
         y = 'independent'
@@ -286,11 +308,11 @@ def vaccines(code):
         title = title
     )
 
-    y_max = dt.people_total.append(pd.Series([0])).max()*1.05
+    y_max = dt.doses_admin_total.append(pd.Series([0])).max()*1.05
 
     scale1 = chart.mark_line().encode(
         x = alt.X("dt:T", title="Date"),
-        y = alt.Y("people_total:Q", 
+        y = alt.Y("doses_admin_total:Q", 
             title = "Total dosed",
             scale = alt.Scale(domain=[0,y_max], nice=False)
         )
