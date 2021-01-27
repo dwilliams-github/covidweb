@@ -120,6 +120,7 @@ a:active {
 	font-size: 10pt;
 	max-width: 40em;
 	font-weight: normal;
+	margin: 0 20px;
 }
 .description h2 {
 	font-size: inherit;
@@ -133,9 +134,10 @@ a:active {
 .copyright {
 	font-size: 0.7em;
 	color: rgb(133, 133, 133);
+	margin: 0 20px;
 }
 button.menu-icon {
-    display: none;
+	display: none;
 }
 .menuhide {
 	display: block !important;
@@ -144,33 +146,33 @@ button.menu-icon {
 	.viewer {
 		display: block;
 	}
-    .menu {
-        display: none;
-        position: absolute;
-        top: 4em;
-        right: 1.2em;
-        border: 1px solid #222;
+	.menu {
+		display: none;
+		position: absolute;
+		top: 4em;
+		right: 1.2em;
+		border: 1px solid #222;
 		width: auto;
 		z-index: 10;
 		margin-right: 0;
 		min-height: auto;
-    }
-    button.menu-icon {
-        background-color: #212121;
-        display: block;
+	}
+	button.menu-icon {
+		background-color: #212121;
+		display: block;
 		position: absolute;
 		top: 2em;
-        right: 2em;
-        padding: 1px;
-        border: 1px solid #CCCC66;
-    }
-    button.menu-icon .bar {
-        display: block;
-        background-color: #CCCC66;
-        width: 2em;
-        height: 4px;
-        border: 2px solid #212121;
-        border-radius: 2px;
+		right: 2em;
+		padding: 1px;
+		border: 1px solid #CCCC66;
+	}
+	button.menu-icon .bar {
+		display: block;
+		background-color: #CCCC66;
+		width: 2em;
+		height: 4px;
+		border: 2px solid #212121;
+		border-radius: 2px;
 	}
 	.vega-embed.has-actions {
 		padding-right:34px !important;
