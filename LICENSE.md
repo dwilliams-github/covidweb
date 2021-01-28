@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2020 David C. WIlliams
+Copyright (c) 2020-2021 David C. WIlliams
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

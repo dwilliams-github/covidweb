@@ -27,6 +27,7 @@ Detail | Source | Link
 County | New York Times | https://github.com/nytimes/covid-19-data
 State | Covid tracking project | https://covidtracking.com
 International | Our World in Data | https://ourworldindata.org/coronavirus-source-data
+USA Vaccines | Johns Hopkins University of Medicine | https://coronavirus.jhu.edu/
 
 ## Architecture
 
