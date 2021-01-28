@@ -99,11 +99,11 @@ function customVegaEmbed( target, url, opts ) {
 
     var workspace = $("<div>").addClass(["vega-embed","has-actions"]);
 
-    var test_abort = function(){
-        if (opts.abort && opts.abort()) reject(Error("Aborted"));
-    }
-
     return new Promise(function(resolve,reject){
+        var test_abort = function(){
+            if (opts.abort && opts.abort()) reject(Error("Aborted"));
+        };
+
         $.ajax({
             url: url,
             dataType: 'json'

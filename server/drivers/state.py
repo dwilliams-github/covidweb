@@ -246,8 +246,6 @@ def vaccines(code):
     dt['alloccap'] = dt.doses_alloc_total/capita
     dt['peoplecap'] = dt.doses_admin_total/capita
 
-    print(dt.head())
-
     chart = alt.Chart(dt)
 
     #
