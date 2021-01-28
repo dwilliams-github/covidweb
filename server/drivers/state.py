@@ -39,8 +39,8 @@ def fetchVaccine(rconn):
     # Check date of main dataframe
     #
     expires = rconn.hget("statevac","expires")
-    #if expires and time.time() < float(expires):
-    #    return context.deserialize(rconn.hget("statevac","dataframe"))
+    if expires and time.time() < float(expires):
+        return context.deserialize(rconn.hget("statevac","dataframe"))
 
     #
     # Fetch new copy
