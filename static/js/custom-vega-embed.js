@@ -119,12 +119,10 @@ function customVegaEmbed( target, url, opts ) {
                 test_abort();
                 view.runAsync().then(function(){
                     addActions(view,workspace,data,spec);
-                    console.log(opts);
                     if (opts.maxwidth) {
                         $(workspace).children('svg').each(function(){
                             const height = $(this).attr('height');
                             const scale = opts.maxwidth / $(this).attr('width');
-                            console.log(scale);
                             if (scale < 1) {
                                 $(this).attr('width',opts.maxwidth);
                                 $(this).attr('height',scale*height);
