@@ -2,6 +2,7 @@ import altair as alt
 import pandas as pd
 from datetime import date
 from os import path
+from io import StringIO
 from flask import current_app as app
 import redis, requests, time, pyarrow, hashlib
 
@@ -28,11 +29,14 @@ def fetchGlobal(rconn):
 
     #
     # Fetch
+    # Make sure we include a user agent
     #
-    answer = pd.read_csv(
+    req = requests.get(
         "https://covid.ourworldindata.org/data/owid-covid-data.csv",
-        parse_dates=["date"]
-    ).filter(
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
+    )
+
+    answer = pd.read_csv(StringIO(req.text), parse_dates=["date"]).filter(
         items=("iso_code","location","population","date","new_cases","new_deaths")
     )
 
