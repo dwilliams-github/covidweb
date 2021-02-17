@@ -3,6 +3,6 @@ server {
     server_name covid19.slashdave.com;
 
     location / {
-        proxy_pass http://unix:/var/run/nginx/flask.sock;
+        proxy_pass http://unix:/run/nginx/flask.sock;
     }
 }

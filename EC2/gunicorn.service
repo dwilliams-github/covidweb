@@ -6,7 +6,7 @@ After=network.target
 User=ubuntu
 Group=www-data
 WorkingDirectory=/srv/covidweb
-ExecStart=/usr/bin/gunicorn3 --workers 3 --bind unix:/var/run/nginx/flask.sock -m 007 server:app
+ExecStart=/usr/bin/gunicorn3 --workers 3 --bind unix:/run/nginx/flask.sock -m 007 server:app
 
 [Install]
 WantedBy=multi-user.target

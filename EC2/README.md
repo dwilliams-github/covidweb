@@ -34,10 +34,6 @@ need the ```.git``` subdirectory.
 
 ## Config files
 
-Make a directory ```/var/run/nginx```, assign to the group ```www-data```,
-and make it group writeable. This is for the unix socket that gunicorn
-will listen to.
-
 The following is a gunicorn service, placed in ```/etc/systemd/system```,
 and the corresponding nginx configuration, placed in ```/etc/nginx/sites-available```.
 Note that certbot will later modify the nginx configuration.
@@ -53,7 +49,7 @@ After=network.target
 User=ubuntu
 Group=www-data
 WorkingDirectory=/srv/covidweb
-ExecStart=/usr/bin/gunicorn3 --workers 3 --bind unix:/var/run/nginx/flask.sock -m 007 server:app
+ExecStart=/usr/bin/gunicorn3 --workers 3 --bind unix:/run/nginx/flask.sock -m 007 server:app
 
 [Install]
 WantedBy=multi-user.target
@@ -67,7 +63,7 @@ server {
     server_name covid19.slashdave.com;
 
     location / {
-        proxy_pass http://unix:/var/run/nginx/flask.sock;
+        proxy_pass http://unix:/run/nginx/flask.sock;
     }
 }
 ```
