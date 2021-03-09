@@ -27,7 +27,7 @@ def plot_state():
     if mode == 'V':
         return jsonify(state.vaccines(code))
     else:
-        return jsonify(state.plot(code,mode))
+        return jsonify(state.plot(code))
 
     
 @api.route("/api/state/composite")

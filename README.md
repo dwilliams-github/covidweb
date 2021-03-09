@@ -25,7 +25,7 @@ gunicorn --reload server:app
 Detail | Source | Link
 -- | -- | ---
 County | New York Times | https://github.com/nytimes/covid-19-data
-State | Covid tracking project | https://covidtracking.com
+State | The CDC | https://covid.cdc.gov/covid-data-tracker/#datatracker-home
 International | Our World in Data | https://ourworldindata.org/coronavirus-source-data
 USA Vaccines | Johns Hopkins University of Medicine | https://coronavirus.jhu.edu/
 
