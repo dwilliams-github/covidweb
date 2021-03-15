@@ -58,8 +58,8 @@ def fetchRecent(rconn):
     # Check date of main dataframe
     #
     expires = rconn.hget("staterecent","expires")
-    #if expires and time.time() < float(expires):
-    #    return context.deserialize(rconn.hget("staterecent","dataframe"))
+    if expires and time.time() < float(expires):
+        return context.deserialize(rconn.hget("staterecent","dataframe"))
 
     #
     # Fetch
