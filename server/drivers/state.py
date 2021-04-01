@@ -133,7 +133,7 @@ def fetchHospital(rconn,key):
         'inpatient_beds',
         'inpatient_beds_used',
         'inpatient_beds_used_covid',
-        'staffed_icu_adult_patients_confirmed_covid',
+        'staffed_icu_adult_patients_confirmed_and_suspected_covid',
         'total_staffed_adult_icu_beds',
     ]
 
@@ -362,8 +362,8 @@ def hospitals(code):
     #
     # We'll fold the data for the hospital plot
     #
-    dt_1 = dth.filter(items=("dt","staffed_icu_adult_patients_confirmed_covid")).rename(
-        columns={"staffed_icu_adult_patients_confirmed_covid":"icu"}
+    dt_1 = dth.filter(items=("dt","staffed_icu_adult_patients_confirmed_and_suspected_covid")).rename(
+        columns={"staffed_icu_adult_patients_confirmed_and_suspected_covid":"icu"}
     )
     dt_2 = dth.filter(items=("dt","total_staffed_adult_icu_beds")).rename(
         columns={"total_staffed_adult_icu_beds":"icu"}
