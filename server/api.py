@@ -26,6 +26,8 @@ def plot_state():
     mode = request.args.get('mode','D')
     if mode == 'V':
         return jsonify(state.vaccines(code))
+    elif mode == 'H':
+        return jsonify(state.hospitals(code))
     else:
         return jsonify(state.plot(code))
 

@@ -106,6 +106,89 @@ def fetchRecent(rconn):
     return answer
 
 
+def fetchHospital(rconn,key):
+    context = pyarrow.default_serialization_context()
+
+    #
+    # See: https://dev.socrata.com/foundry/healthdata.gov/g62h-syeh
+    #
+
+    #
+    # Check date of main dataframe
+    #
+    expires = rconn.hget("statehos"+key,"expires")
+    if expires and time.time() < float(expires):
+        return context.deserialize(rconn.hget("statehos"+key,"dataframe"))
+
+    #
+    # Fetch
+    # Make sure we include a user agent. We are limited to 50,000 records per query,
+    # but that should be plenty for this table (which has rows per day)
+    #
+    # The HHS sure loves long column names...
+    #
+    columns = [
+        'date',
+        'state',
+        'inpatient_beds',
+        'inpatient_beds_used',
+        'inpatient_beds_used_covid',
+        'staffed_icu_adult_patients_confirmed_covid',
+        'total_staffed_adult_icu_beds',
+    ]
+
+    req = requests.get(
+        "https://healthdata.gov/resource/g62h-syeh.csv",
+        params={
+            'state': key,
+            '$limit': 5000, 
+            '$select': ",".join(columns),
+            "$$app_token": app.config['SOCRATA_TOKEN']
+        },
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
+    )
+
+    answer = pd.read_csv(StringIO(req.text), parse_dates=["date"]).rename(columns={
+        'date': 'dt'
+    })
+
+    answer = answer.sort_values('dt')
+
+    #
+    # Save
+    #
+    rconn.hset("statehos"+key,"dataframe",context.serialize(answer).to_buffer().to_pybytes())
+    rconn.hset("statehos"+key,"expires",str(time.time()+600.0))
+
+    return answer
+
+
+def fetchTesting(rconn):
+    context = pyarrow.default_serialization_context()
+
+    #
+    # Check date of main dataframe
+    #
+    expires = rconn.hget("statetest","expires")
+    if expires and time.time() < float(expires):
+        return context.deserialize(rconn.hget("statetest","dataframe"))
+
+    #
+    # Fetch new copy
+    #
+    url = "https://raw.githubusercontent.com/govex/COVID-19/master/data_tables/testing_data/time_series_covid19_US.csv"
+    dt = pd.read_csv(url, parse_dates=["date"])
+    #dt = dt.filter(items=("date","state","tests_viral_total","tests_viral_positive"))
+    dt = dt.sort_values(by="date")
+
+    #
+    # Save
+    #
+    rconn.hset("statetest","dataframe",context.serialize(dt).to_buffer().to_pybytes())
+    rconn.hset("statetest","expires",str(time.time()+600.0))
+    return dt
+
+
 def fetchVaccine(rconn):
     context = pyarrow.default_serialization_context()
 
@@ -182,7 +265,6 @@ def plot(code):
     # Here we use a scale from 0 to min(daily.max(),rolling.max()*1.5),
     # in order to protect from wild daily corrections
     #
-
     def case_plot(chart):
         fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
 
@@ -229,6 +311,82 @@ def plot(code):
     bot = (death_points + death_average).properties(width=500, height=200)
 
     return (top & bot).configure_legend(title=None).to_dict()
+
+
+def hospitals(code):
+    r = connect()
+    dt = fetchState(r,code)
+    dth = fetchHospital(r,code)
+    pop = fetchPopulation(r)
+
+    dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
+    dth = dth[dth.dt >= pd.to_datetime(date(2020,3,1))]
+
+    #
+    # This are fake, so we can make a legend
+    #
+    dt['src1'] = "Daily"
+    dt['src2'] = "7 day"
+
+    title = pop[pop.state==code].NAME.to_string(index=False).strip()
+
+    case_items = ("dt","new_case","croll","src1","src2")
+
+    #
+    # Here we use a scale from 0 to min(daily.max(),rolling.max()*1.5),
+    # in order to protect from wild daily corrections
+    #
+    def case_plot(chart):
+        fake_scale = alt.Scale(domain=('Daily','7 day'), range=('lightgrey','blue'))
+
+        case_points = chart.mark_line(point=True,clip=True).encode(
+            x = alt.X("dt:T",title="Date"),
+            y = alt.Y(
+                "new_case:Q",
+                title="Cases",
+                scale = alt.Scale(domain=[0,min(dt.new_case.max(),dt.croll.max()*1.5)])
+            ),
+            color = alt.Color("src1", scale=fake_scale)
+        )
+        case_average = chart.mark_line(clip=True).encode(
+            x = alt.X('dt:T'),
+            y = alt.Y('croll:Q'),
+            color = alt.Color("src2", scale=fake_scale)
+        )
+        return (case_points + case_average).properties(width=500, height=200, title=title)
+
+    dt['croll'] = dt.new_case.rolling(window=7).mean()
+    chart = alt.Chart(dt.filter(items = case_items))
+    top = case_plot(chart)
+
+    #
+    # We'll fold the data for the hospital plot
+    #
+    dt_1 = dth.filter(items=("dt","staffed_icu_adult_patients_confirmed_covid")).rename(
+        columns={"staffed_icu_adult_patients_confirmed_covid":"icu"}
+    )
+    dt_2 = dth.filter(items=("dt","total_staffed_adult_icu_beds")).rename(
+        columns={"total_staffed_adult_icu_beds":"icu"}
+    )
+    dt_1['label'] = 'COVID-19'
+    dt_2['label'] = 'Total'
+
+    chart2 = alt.Chart(pd.concat([dt_1,dt_2])).mark_line().encode(
+        x = alt.X("dt:T", title="Date"),
+        y = alt.Y(
+            "icu:Q",
+            title = "Staffed ICU beds"
+        ),
+        color = alt.Color("label",scale=alt.Scale(
+            domain=('Total','COVID-19'), 
+            range=('darkblue','darkorange')
+        ))
+    )
+
+    bot = chart2.properties(width=500, height=200)
+
+    return (top & bot).resolve_scale(color='independent').configure_legend(title=None).to_dict()
+
 
 
 def vaccines(code):
