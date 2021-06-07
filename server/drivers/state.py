@@ -556,10 +556,6 @@ def vaccines_bar():
 
     chart = alt.Chart(reduced)
 
-    #
-    # We won't force the axis to start at zero, since a bar of zero
-    # wouldn't be distinguishable from an (accidental) negative value
-    #
     top = chart.mark_bar().encode(
         x = alt.X("key:N",title="State"),
         y = alt.Y("onedose:Q", title="Percent eligible", axis=alt.Axis(format='%'), scale=alt.Scale(domain=[0,1]))
