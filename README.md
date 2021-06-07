@@ -27,6 +27,7 @@ Detail | Source | Link
 County | New York Times | https://github.com/nytimes/covid-19-data
 State cases | The CDC | https://covid.cdc.gov/covid-data-tracker/#datatracker-home
 State hospitalization | US Department of HHS | https://beta.healthdata.gov/
+State vaccines | The CDC | https://covid.cdc.gov/covid-data-tracker/#datatracker-home
 International | Our World in Data | https://ourworldindata.org/coronavirus-source-data
 USA Vaccines | Johns Hopkins University of Medicine | https://coronavirus.jhu.edu/
 

@@ -35,6 +35,8 @@ def plot_state():
 @api.route("/api/state/composite")
 def plot_state_composite():
     mode = request.args.get('mode','TC')
+    if mode == 'VB':
+        return jsonify(state.vaccines_bar())
     if mode == 'TC':
         return jsonify(state.top_four_cases())
     if mode == 'TCC':

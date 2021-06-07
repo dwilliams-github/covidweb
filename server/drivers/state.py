@@ -1,5 +1,6 @@
 import altair as alt
 import pandas as pd
+import numpy as np
 from datetime import date, timedelta
 from os import path
 from io import StringIO
@@ -163,57 +164,169 @@ def fetchHospital(rconn,key):
     return answer
 
 
-def fetchTesting(rconn):
+def fetchVaccine(rconn,key):
     context = pyarrow.default_serialization_context()
+
+    #
+    # See: https://dev.socrata.com/foundry/data.cdc.gov/unsk-b7fc
+    #
 
     #
     # Check date of main dataframe
     #
-    expires = rconn.hget("statetest","expires")
+    expires = rconn.hget("statevac"+key,"expires")
     if expires and time.time() < float(expires):
-        return context.deserialize(rconn.hget("statetest","dataframe"))
+        return context.deserialize(rconn.hget("statevac"+key,"dataframe"))
 
     #
-    # Fetch new copy
+    # Fetch
+    # Make sure we include a user agent. We are limited to 50,000 records per query,
+    # but that should be plenty for this table (which has rows per day)
     #
-    url = "https://raw.githubusercontent.com/govex/COVID-19/master/data_tables/testing_data/time_series_covid19_US.csv"
-    dt = pd.read_csv(url, parse_dates=["date"])
-    #dt = dt.filter(items=("date","state","tests_viral_total","tests_viral_positive"))
-    dt = dt.sort_values(by="date")
+    columns = [
+        'Date',
+        'administered_dose1_recip',
+        'series_complete_yes'
+    ]
+
+    req = requests.get(
+        " https://data.cdc.gov/resource/unsk-b7fc.csv",
+        params={
+            'Location': key,
+            '$limit': 5000, 
+            '$select': ",".join(columns),
+            "$$app_token": app.config['SOCRATA_TOKEN']
+        },
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
+    )
+
+    answer = pd.read_csv(StringIO(req.text), parse_dates=["Date"]).rename(columns={
+        'Date': 'date',
+        'administered_dose1_recip': 'onedose',
+        'series_complete_yes': 'complete'
+    }).sort_values('date')
+
+    #
+    # Get corresponding FIPS code
+    #
+    fipfile = path.join(app.config['DATA_DIR'],"fips-code.csv")
+    fips = pd.read_csv(fipfile,sep="\t")
+    fip_code = fips[fips['key']==key].code.values[0]
+
+    #
+    # Use this to fetch population by age
+    #
+    popfile = path.join(app.config['DATA_DIR'],"sc-est2019-agesex-civ.csv")
+    pop = pd.read_csv(popfile).filter(items=[
+        'STATE', 'SEX', 'AGE', 'POPEST2019_CIV'
+    ])
+    pop = pop[(pop.STATE == fip_code) & (pop.SEX == 0)]
+
+    #
+    # Convert to total population
+    #
+    pop12 = pop[(pop.AGE >= 12) & (pop.AGE < 900)]['POPEST2019_CIV'].sum()
+    pop16 = pop[(pop.AGE >= 16) & (pop.AGE < 900)]['POPEST2019_CIV'].sum()
+
+    #
+    # Merge
+    #
+    answer['eligible'] = np.where(answer['date'] > pd.to_datetime(date(2021,5,10)), pop12, pop16)
 
     #
     # Save
     #
-    rconn.hset("statetest","dataframe",context.serialize(dt).to_buffer().to_pybytes())
-    rconn.hset("statetest","expires",str(time.time()+600.0))
-    return dt
+    rconn.hset("statevac"+key,"dataframe",context.serialize(answer).to_buffer().to_pybytes())
+    rconn.hset("statevac"+key,"expires",str(time.time()+600.0))
+
+    return answer
 
 
-def fetchVaccine(rconn):
+
+
+def fetchRecentVaccine(rconn):
     context = pyarrow.default_serialization_context()
+
+    #
+    # See: https://dev.socrata.com/foundry/data.cdc.gov/unsk-b7fc
+    #
 
     #
     # Check date of main dataframe
     #
-    expires = rconn.hget("statevac","expires")
+    expires = rconn.hget("staterecvac","expires")
     if expires and time.time() < float(expires):
-        return context.deserialize(rconn.hget("statevac","dataframe"))
+        return context.deserialize(rconn.hget("staterecvac","dataframe"))
 
     #
-    # Fetch new copy
+    # Fetch, sorted by date, to get most recent results, and fetch enough
+    # to cover all the states
     #
-    url = "https://raw.githubusercontent.com/govex/COVID-19/master/data_tables/vaccine_data/us_data/time_series/vaccine_data_us_timeline.csv"
-    dt = pd.read_csv(url, parse_dates=["Date"])
-    dt = dt[dt.Vaccine_Type == 'All']
-    dt = dt.filter(items=("Province_State","Date","Doses_alloc","Doses_shipped","Doses_admin","Stage_Two_Doses"))
-    dt = dt.sort_values(by="Date")
+    columns = [
+        'Date',
+        'Location',
+        'administered_dose1_recip',
+        'series_complete_yes'
+    ]
+
+    req = requests.get(
+        " https://data.cdc.gov/resource/unsk-b7fc.csv",
+        params={
+            '$order': "Date DESC",
+            '$limit': 200, 
+            '$select': ",".join(columns),
+            "$$app_token": app.config['SOCRATA_TOKEN']
+        },
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
+    )
+
+    answer = pd.read_csv(StringIO(req.text), parse_dates=["Date"]).rename(columns={
+        'Date': 'date',
+        'Location': 'key',
+        'administered_dose1_recip': 'onedose',
+        'series_complete_yes': 'complete'
+    })
+
+    #
+    # Only keep most recent results
+    #
+    answer = answer.sort_values(['key','date'], ascending=False).drop_duplicates(subset=["key"])
+
+    #
+    # Merge with FIPS
+    #
+    fipfile = path.join(app.config['DATA_DIR'],"fips-code.csv")
+    fips = pd.read_csv(fipfile,sep="\t")
+    answer = answer.merge(fips,on="key")
+
+    #
+    # Get population > 12 years old
+    #
+    popfile = path.join(app.config['DATA_DIR'],"sc-est2019-agesex-civ.csv")
+    pop = pd.read_csv(popfile).filter(items=[
+        'STATE', 'SEX', 'AGE', 'POPEST2019_CIV'
+    ])
+    pop = pop[(pop.AGE >= 12) & (pop.AGE < 900) & (pop.SEX == 0)].filter(
+        items=("STATE","POPEST2019_CIV")
+    ).rename(columns={
+        'STATE': 'code',
+        'POPEST2019_CIV': 'eligible'
+    })
+
+    pop = pop.groupby(by="code").sum().reset_index()
+
+    #
+    # Merge into answer
+    #
+    answer = answer.merge(pop,on="code")
 
     #
     # Save
     #
-    rconn.hset("statevac","dataframe",context.serialize(dt).to_buffer().to_pybytes())
-    rconn.hset("statevac","expires",str(time.time()+600.0))
-    return dt
+    rconn.hset("staterecvac","dataframe",context.serialize(answer).to_buffer().to_pybytes())
+    rconn.hset("staterecvac","expires",str(time.time()+600.0))
+
+    return answer
 
 
 def fetchPopulation(rconn):
@@ -391,86 +504,81 @@ def hospitals(code):
 
 def vaccines(code):
     r = connect()
+    dt = fetchVaccine(r,code)
+
+    dt['onedose_pop'] = dt['onedose'] / dt['eligible']
+    dt['complete_pop'] = dt['complete'] / dt['eligible']
+
+    #
+    # Serialize, and also eliminate data rows with zeros, which appear to be
+    # placeholders for "no data".
+    #
+    dt1 = dt[dt['onedose'] > 0].filter(items=['date','onedose_pop']).copy().rename(columns={
+        'onedose_pop': 'frac'
+    })
+    dt1['status'] = 'One dose'
+
+    dt2 = dt[dt['complete'] > 0].filter(items=['date','complete_pop']).copy().rename(columns={
+        'complete_pop': 'frac'
+    })
+    dt2['status'] = 'Fully vaccinated'
+
+    #
+    # Title
+    #
     pop = fetchPopulation(r)
-
     title = pop[pop.state==code].NAME.to_string(index=False).strip()
-    capita = pop[pop.state==code].POPESTIMATE2010.max()
-
-    dt = fetchVaccine(r)
-    dt = dt[dt.Province_State==title]
-    dt = dt[dt.Date >= pd.to_datetime(date(2020,12,1))]
-
-    dt['Doses_alloc_cap'] = dt.Doses_alloc/capita
-    dt['Doses_shipped_cap'] = dt.Doses_shipped/capita
-    dt['Doses_admin_cap'] = dt.Doses_admin/capita
-
-    chart = alt.Chart(dt)
 
     #
-    # We want dual y axes, but with just a scaling factor
-    # (so a single plot line).
+    # Build chart
     #
-    # Altair doesn't support this, so instead we can
-    # pretend we are plotting independent values, but explicitly 
-    # set y axis limits consistently
-    #
-    # Note: it is important to set nice=False to override padding
-    #
-    # Be careful not to include a NaN in the scale domain, as
-    # this produces bad json objects.
-    #
-    y_max = dt.Doses_shipped.append(pd.Series([0])).max()*1.05
-
-    scale1 = chart.mark_line().encode(
-        x = alt.X("Date:T", title="Date"),
-        y = alt.Y("Doses_shipped:Q", 
-            title = "Total shipped",
-            scale = alt.Scale(domain=[0,y_max], nice=False)
-        )
-    )
-    scale2 = chart.mark_line(opacity=0).encode(
-        x = alt.X("Date:T", title="Date"),
-        y = alt.Y("Doses_shipped_cap:Q", 
-            title = "Total shipped, per capita", 
-            axis = alt.Axis(format='%'),
-            scale = alt.Scale(domain=[0,y_max/capita], nice=False)
-        )
+    chart = alt.Chart(pd.concat([dt1,dt2])).mark_line().encode(
+        x = alt.X('date:T', title="Date"),
+        y = alt.Y('frac:Q', title="Percent eligible", axis=alt.Axis(format='%')),
+        color = alt.Color('status:N')
     )
 
-    top = alt.layer(scale1,scale2).resolve_scale(
-        y = 'independent'
+    return chart.properties(width=500, height=300, title=title).configure_legend(title=None).to_dict()
+
+
+
+def vaccines_bar():
+    r = connect()
+    dt = fetchRecentVaccine(r)
+
+    dt['onedose'] = dt['onedose'] / dt['eligible']
+    dt['complete'] = dt['complete'] / dt['eligible']
+    reduced = dt.filter(items=[
+        'key', 'onedose', 'complete'
+    ]).sort_values(by="key")
+
+    datestamp = pd.to_datetime(dt['date'].values[0]).strftime('%D')
+
+    chart = alt.Chart(reduced)
+
+    #
+    # We won't force the axis to start at zero, since a bar of zero
+    # wouldn't be distinguishable from an (accidental) negative value
+    #
+    top = chart.mark_bar().encode(
+        x = alt.X("key:N",title="State"),
+        y = alt.Y("onedose:Q", title="Percent eligible", axis=alt.Axis(format='%'), scale=alt.Scale(domain=[0,1]))
     ).properties(
-        width = 500, 
+        width = 600,
         height = 200,
-        title = title
+        title = "At least one dose {}".format(datestamp)
     )
 
-    y_max = dt.Doses_admin.append(pd.Series([0])).max()*1.05
-
-    scale1 = chart.mark_line().encode(
-        x = alt.X("Date:T", title="Date"),
-        y = alt.Y("Doses_admin:Q", 
-            title = "Total dosed",
-            scale = alt.Scale(domain=[0,y_max], nice=False)
-        )
-    )
-    scale2 = chart.mark_line(opacity=0).encode(
-        x = alt.X("Date:T", title="Date"),
-        y = alt.Y("Doses_admin_cap:Q",
-            title="Total dosed, per capita",
-            axis=alt.Axis(format='%'),
-            scale = alt.Scale(domain=[0,y_max/capita], nice=False)
-        )
-    )
-
-    bot = alt.layer(scale1,scale2).resolve_scale(
-        y = 'independent'
+    bottom = chart.mark_bar().encode(
+        x = alt.X("key:N",title="State"),
+        y = alt.Y("complete:Q", title="Percent eligible", axis=alt.Axis(format='%'), scale=alt.Scale(domain=[0,1]))
     ).properties(
-        width = 500,
-        height = 200
+        width = 600,
+        height = 200,
+        title = "Fully vaccinated {}".format(datestamp)
     )
 
-    return (top & bot).to_dict()
+    return (top & bottom).to_dict()
 
 
 def top_four_cases():
