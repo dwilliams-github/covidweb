@@ -49,6 +49,7 @@ After=network.target
 User=ubuntu
 Group=www-data
 WorkingDirectory=/srv/covidweb
+RuntimeDirectory=nginx
 ExecStart=/usr/bin/gunicorn3 --workers 3 --bind unix:/run/nginx/flask.sock -m 007 server:app
 
 [Install]
