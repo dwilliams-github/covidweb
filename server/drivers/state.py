@@ -347,6 +347,20 @@ def fetchPopulation(rconn):
     return pop
 
 
+def fetchPolitics(rconn):
+    context = pyarrow.default_serialization_context()
+    #if rconn.hexists("state","politics"):
+    #    return context.deserialize(rconn.hget("state","politics"))
+        
+    politicsfile = path.join(app.config['DATA_DIR'],"state-party-affiliation.csv")
+    namefile = path.join(app.config['DATA_DIR'],"state-abbre.csv")
+    pol = pd.read_csv(politicsfile, sep="\t")
+    pol = pol.merge(pd.read_csv(namefile).rename(columns={'State':'state'}),on="state")
+
+    rconn.hset("state","politics",context.serialize(pol).to_buffer().to_pybytes())
+    return pol
+
+
 def menu():
     r = connect()
     pop = fetchPopulation(r)
@@ -575,6 +589,54 @@ def vaccines_bar():
     )
 
     return (top & bottom).to_dict()
+
+
+def vaccines_by_party():
+    r = connect()
+    dt = fetchRecentVaccine(r)
+    pol = fetchPolitics(r).filter(items=("Code","democrat")).rename(columns={"Code":"key"})
+    dt = dt.merge(pol,on="key")
+
+    dt['onedose'] = dt['onedose'] / dt['eligible']
+    dt['complete'] = dt['complete'] / dt['eligible']
+    dt['democrat'] = dt['democrat'] / 100.0
+    reduced = dt.filter(items=[
+        'key', 'onedose', 'complete', "democrat"
+    ]).sort_values(by="key")
+
+    datestamp = pd.to_datetime(dt['date'].values[0]).strftime('%D')
+
+    chart = alt.Chart(reduced)
+
+    points = chart.mark_point().encode(
+        x = alt.X(
+            "democrat:Q",
+            title="Percent Democrat/Lean Democrat (2018)", 
+            axis=alt.Axis(format='%'),
+            scale=alt.Scale(zero=False)
+        ),
+        y = alt.Y("onedose:Q",
+            title="Percent eligible vaccinated",
+            axis=alt.Axis(format='%'), 
+            scale=alt.Scale(zero=False)
+        )
+    ).properties(
+        width = 500,
+        height = 400,
+        title = "At least one dose {}".format(datestamp)
+    )
+
+    marks = chart.mark_text(
+        align = "center",
+        baseline = "bottom",
+        dy = -3
+    ).encode(
+        x = alt.X("democrat:Q"),
+        y = alt.Y("onedose:Q"),
+        text="key"
+    )
+
+    return (points + marks).to_dict()
 
 
 def top_four_cases():

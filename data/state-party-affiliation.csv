@@ -1,0 +1,51 @@
+state	democrat	republican	demadvantage	n	class
+Massachusetts	56	27	29	1,623	Strong Democratic
+Vermont	55	30	25	249	Strong Democratic
+Hawaii	54	29	25	301	Strong Democratic
+New York	53	30	23	4,591	Strong Democratic
+Maryland	54	31	23	1,337	Strong Democratic
+California	51	31	20	8,116	Strong Democratic
+Connecticut	52	33	19	927	Strong Democratic
+Illinois	50	34	16	2,374	Strong Democratic
+New Jersey	50	35	15	1,860	Strong Democratic
+Washington	50	35	15	1,980	Strong Democratic
+Maine	50	37	13	412	Strong Democratic
+Delaware	48	35	13	250	Strong Democratic
+New Hampshire	48	36	12	350	Strong Democratic
+New Mexico	48	38	10	653	Strong Democratic
+Oregon	47	38	9	1,316	Lean Democratic
+Minnesota	46	38	8	1,507	Lean Democratic
+Rhode Island	43	36	7	298	Lean Democratic
+Virginia	46	39	7	2,022	Lean Democratic
+Colorado	47	40	7	1,549	Lean Democratic
+Nevada	45	38	7	647	Lean Democratic
+Pennsylvania	46	40	6	3,272	Lean Democratic
+Michigan	45	39	6	2,319	Lean Democratic
+Georgia	43	42	1	2,214	Competitive
+Florida	42	41	1	4,709	Competitive
+Wisconsin	43	43	0	1,447	Competitive
+Iowa	42	42	0	825	Competitive
+Arizona	41	41	0	948	Competitive
+Nebraska	42	43	-1	507	Competitive
+North Carolina	41	42	-1	2,433	Competitive
+Kentucky	42	45	-3	1,124	Competitive
+Texas	39	42	-3	5,898	Competitive
+Ohio	41	45	-4	2,629	Competitive
+Montana	39	46	-7	427	Lean Republican
+Indiana	38	46	-8	1,575	Lean Republican
+Louisiana	37	45	-8	1,117	Lean Republican
+Oklahoma	38	46	-8	1,073	Lean Republican
+Missouri	38	47	-9	1,532	Lean Republican
+South Carolina	37	47	-10	1,262	Strong Republican
+South Dakota	40	51	-11	303	Strong Republican
+Kansas	36	47	-11	746	Strong Republican
+West Virginia	37	49	-12	445	Strong Republican
+Mississippi	36	48	-12	666	Strong Republican
+Tennessee	35	48	-13	1,692	Strong Republican
+Arkansas	35	48	-13	758	Strong Republican
+Idaho	34	50	-16	591	Strong Republican
+Alabama	35	52	-17	1,275	Strong Republican
+Alaska	33	51	-18	232	Strong Republican
+North Dakota	30	55	-25	241	Strong Republican
+Utah	28	56	-28	952	Strong Republican
+Wyoming	25	59	-34	286	Strong Republican

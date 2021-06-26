@@ -37,6 +37,8 @@ def plot_state_composite():
     mode = request.args.get('mode','TC')
     if mode == 'VB':
         return jsonify(state.vaccines_bar())
+    if mode == 'VP':
+        return jsonify(state.vaccines_by_party())
     if mode == 'TC':
         return jsonify(state.top_four_cases())
     if mode == 'TCC':
