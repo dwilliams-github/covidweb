@@ -220,7 +220,7 @@ def simple_plot(code):
             scale = alt.Scale(domain=not_too_negative(fc.ddeaths,fc.froll))
         ),
     )
-    death_average = chart.mark_line().encode(
+    death_average = chart.mark_line(clip=True).encode(
         x = alt.X('dt:T'),
         y = alt.Y('froll:Q')
     )
@@ -262,7 +262,7 @@ def both():
         y = alt.Y(
             "dcases:Q", 
             title = "Daily cases, 7 day rolling average",
-            scale = alt.Scale(domain=not_too_negative(dt_top.dcases,dt_top.droll))
+            scale = alt.Scale(domain=not_too_negative(dt_top.droll,dt_top.droll))
         ),
         color = alt.Color("county:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
@@ -281,7 +281,7 @@ def both():
         y = alt.Y(
             "dcases:Q", 
             title = "Daily cases, 7 day rolling average",
-            scale = alt.Scale(domain=not_too_negative(ha.dcases,ha.droll))
+            scale = alt.Scale(domain=not_too_negative(ha.droll,ha.droll))
         ),
         color = alt.Color("county:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
@@ -322,7 +322,7 @@ def silicon_valley():
         y = alt.X(
             "dcases:Q", 
             title = "Daily cases, 7 day rolling average",
-            scale = alt.Scale(domain=not_too_negative(dt.dcases,dt.droll))
+            scale = alt.Scale(domain=not_too_negative(dt.droll,dt.droll))
         ),
         color = alt.Color("county:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))

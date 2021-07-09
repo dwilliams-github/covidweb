@@ -629,7 +629,8 @@ def vaccines_by_party():
     marks = chart.mark_text(
         align = "center",
         baseline = "bottom",
-        dy = -3
+        dy = -3,
+        fontSize = 9
     ).encode(
         x = alt.X("democrat:Q"),
         y = alt.Y("onedose:Q"),
