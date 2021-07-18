@@ -10,6 +10,72 @@ import redis, requests, time, pyarrow
 def connect():
     return redis.Redis( host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'] )
 
+#
+# A simple label placement algorithm, to avoid overlaps
+#
+# A conventional approach might use scipy.optimize, but I want
+# to avoid dependence on something so big as scipy just for this one
+# purpose.
+#
+class label_placement:
+    def __init__(self, xcol, ycol):
+        xy = np.column_stack( [xcol.to_numpy(), ycol.to_numpy()] )
+        dxy = (xy.max(axis=0) - xy.min(axis=0))/40
+        
+        r0 = xy/dxy
+
+        #
+        # Default starts above mark
+        #
+        phi = np.array([np.pi/2]*len(r0))
+
+        #
+        # Push away from closest neighbor
+        #
+        i0, i1 = np.triu_indices(r0.shape[0], k=1)
+        r = r0 + [0,1]    # = [cos(phi),sin(phi)]
+
+        for attempt in range(0,100):
+            #
+            # Find worst collision
+            #
+            id2 = np.argmin(((r[i0,:]-r[i1,:])**2).sum(axis=1))
+            t0 = i0[id2]
+            t1 = i1[id2]
+
+            #
+            # We're finished if the collision isn't too bad
+            #
+            dr = r[t0,:] - r[t1,:]
+            if (dr**2).sum() > 2: break
+
+            #
+            # Move each by delta in phi
+            #
+            if np.cos(phi[t0]) * dr[1] - np.sin(phi[t0]) * dr[0] > 0:
+                phi[t0] += np.pi/6
+            else:
+                phi[t0] -= np.pi/6
+
+            r[t0,:] = r0[t0,:] + [np.cos(phi[t0]), np.sin(phi[t0])]
+
+            if np.cos(phi[t1]) * dr[1] - np.sin(phi[t1]) * dr[0] < 0:
+                phi[t1] += np.pi/6
+            else:
+                phi[t1] -= np.pi/6
+
+            r[t1,:] = r0[t1,:] + [np.cos(phi[t1]), np.sin(phi[t1])]
+
+        self.xy = r * dxy
+
+    def X(self):
+        return self.xy[:,0]
+
+    def Y(self):
+        return self.xy[:,1]
+
+
+
 
 def fetchState(rconn,key):
     context = pyarrow.default_serialization_context()
@@ -36,6 +102,9 @@ def fetchState(rconn,key):
         },
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
     )
+
+    if req.status_code != 200:
+        raise Exception("Requestion failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["submission_date"]).rename(columns={
         'submission_date': 'dt'
@@ -81,6 +150,9 @@ def fetchRecent(rconn):
         },
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
     )
+
+    if req.status_code != 200:
+        raise Exception("Requestion failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["submission_date"]).rename(columns={
         'submission_date': 'dt'
@@ -149,6 +221,9 @@ def fetchHospital(rconn,key):
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
     )
 
+    if req.status_code != 200:
+        raise Exception("Requestion failure: {}".format(req.status_code))
+
     answer = pd.read_csv(StringIO(req.text), parse_dates=["date"]).rename(columns={
         'date': 'dt'
     })
@@ -199,6 +274,9 @@ def fetchVaccine(rconn,key):
         },
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
     )
+
+    if req.status_code != 200:
+        raise Exception("Requestion failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["Date"]).rename(columns={
         'Date': 'date',
@@ -270,7 +348,7 @@ def fetchRecentVaccine(rconn):
     ]
 
     req = requests.get(
-        " https://data.cdc.gov/resource/unsk-b7fc.csv",
+        "https://data.cdc.gov/resource/unsk-b7fc.csv",
         params={
             '$order': "Date DESC",
             '$limit': 200, 
@@ -279,6 +357,9 @@ def fetchRecentVaccine(rconn):
         },
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
     )
+
+    if req.status_code != 200:
+        raise Exception("Requestion failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["Date"]).rename(columns={
         'Date': 'date',
@@ -606,6 +687,19 @@ def vaccines_by_party():
 
     datestamp = pd.to_datetime(dt['date'].values[0]).strftime('%D')
 
+    #
+    # Label overlap avoidance
+    #
+    # This is a feature that is coming to Vega, but hasn't been incorporated
+    # yet in altair. Do something simple here.
+    #
+    labels = label_placement(reduced['democrat'], reduced['onedose'])
+    reduced['xlab'] = labels.X()
+    reduced['ylab'] = labels.Y()
+
+    #
+    # Back to making the chart
+    #
     chart = alt.Chart(reduced)
 
     points = chart.mark_point().encode(
@@ -628,12 +722,11 @@ def vaccines_by_party():
 
     marks = chart.mark_text(
         align = "center",
-        baseline = "bottom",
-        dy = -3,
+        baseline = "middle",
         fontSize = 9
     ).encode(
-        x = alt.X("democrat:Q"),
-        y = alt.Y("onedose:Q"),
+        x = alt.X("xlab:Q"),
+        y = alt.Y("ylab:Q"),
         text="key"
     )
 
