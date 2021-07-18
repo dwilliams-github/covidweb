@@ -36,6 +36,9 @@ def fetchGlobal(rconn):
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:77.0) Gecko/20100101 Firefox/77.0'}
     )
 
+    if req.status_code != 200:
+        raise Exception("Requestion failure: {}".format(req.status_code))
+
     answer = pd.read_csv(StringIO(req.text), parse_dates=["date"]).filter(
         items=("iso_code","location","population","date","new_cases","new_deaths")
     )
