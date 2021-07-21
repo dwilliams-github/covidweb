@@ -430,8 +430,8 @@ def fetchPopulation(rconn):
 
 def fetchPolitics(rconn):
     context = pyarrow.default_serialization_context()
-    #if rconn.hexists("state","politics"):
-    #    return context.deserialize(rconn.hget("state","politics"))
+    if rconn.hexists("state","politics"):
+        return context.deserialize(rconn.hget("state","politics"))
         
     politicsfile = path.join(app.config['DATA_DIR'],"state-party-affiliation.csv")
     namefile = path.join(app.config['DATA_DIR'],"state-abbre.csv")
