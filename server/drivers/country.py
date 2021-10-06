@@ -37,7 +37,7 @@ def fetchGlobal(rconn):
     )
 
     if req.status_code != 200:
-        raise Exception("Requestion failure: {}".format(req.status_code))
+        raise Exception("Request failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["date"]).filter(
         items=("iso_code","location","population","date","new_cases","new_deaths")

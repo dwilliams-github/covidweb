@@ -104,7 +104,7 @@ def fetchState(rconn,key):
     )
 
     if req.status_code != 200:
-        raise Exception("Requestion failure: {}".format(req.status_code))
+        raise Exception("Request failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["submission_date"]).rename(columns={
         'submission_date': 'dt'
@@ -152,7 +152,7 @@ def fetchRecent(rconn):
     )
 
     if req.status_code != 200:
-        raise Exception("Requestion failure: {}".format(req.status_code))
+        raise Exception("Request failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["submission_date"]).rename(columns={
         'submission_date': 'dt'
@@ -222,7 +222,7 @@ def fetchHospital(rconn,key):
     )
 
     if req.status_code != 200:
-        raise Exception("Requestion failure: {}".format(req.status_code))
+        raise Exception("Request failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["date"]).rename(columns={
         'date': 'dt'
@@ -276,7 +276,7 @@ def fetchVaccine(rconn,key):
     )
 
     if req.status_code != 200:
-        raise Exception("Requestion failure: {}".format(req.status_code))
+        raise Exception("Request failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["Date"]).rename(columns={
         'Date': 'date',
@@ -359,7 +359,7 @@ def fetchRecentVaccine(rconn):
     )
 
     if req.status_code != 200:
-        raise Exception("Requestion failure: {}".format(req.status_code))
+        raise Exception("Request failure: {}".format(req.status_code))
 
     answer = pd.read_csv(StringIO(req.text), parse_dates=["Date"]).rename(columns={
         'Date': 'date',
