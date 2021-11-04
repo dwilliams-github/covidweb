@@ -303,13 +303,15 @@ def fetchVaccine(rconn,key):
     #
     # Convert to total population
     #
+    pop5  = pop[(pop.AGE >= 5 ) & (pop.AGE < 900)]['POPEST2019_CIV'].sum()
     pop12 = pop[(pop.AGE >= 12) & (pop.AGE < 900)]['POPEST2019_CIV'].sum()
     pop16 = pop[(pop.AGE >= 16) & (pop.AGE < 900)]['POPEST2019_CIV'].sum()
 
     #
     # Merge
     #
-    answer['eligible'] = np.where(answer['date'] > pd.to_datetime(date(2021,5,10)), pop12, pop16)
+    w1 = np.where(answer['date'] > pd.to_datetime(date(2021,5,10)), pop12, pop16)
+    answer['eligible'] = np.where(answer['date'] > pd.to_datetime(date(2021,11,3)), pop5, w1)
 
     #
     # Save
@@ -387,7 +389,7 @@ def fetchRecentVaccine(rconn):
     pop = pd.read_csv(popfile).filter(items=[
         'STATE', 'SEX', 'AGE', 'POPEST2019_CIV'
     ])
-    pop = pop[(pop.AGE >= 12) & (pop.AGE < 900) & (pop.SEX == 0)].filter(
+    pop = pop[(pop.AGE >= 5) & (pop.AGE < 900) & (pop.SEX == 0)].filter(
         items=("STATE","POPEST2019_CIV")
     ).rename(columns={
         'STATE': 'code',
