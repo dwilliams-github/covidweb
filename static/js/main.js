@@ -21,29 +21,42 @@ function makePermalink( vid, controls ) {
     });
     $("#v"+vid+" .permalink a").attr('href',"/?" + items.join("&"));
 }
+function params(names) {
+    return names.map(function(n){return $("#"+n).serialize()}).join("&");
+}
 function country() {
-    makePermalink(0, ["selcountry"]);
-    showPlot("#v0 .vega", "/api/country/graph?"+$("#selcountry").serialize());
+    const vars = ["selcountry","timecountry"];
+    makePermalink(0,vars);
+    showPlot("#v0 .vega", "/api/country/graph?"+params(vars));
 }
 function countryComposite() {
-    makePermalink(1, ["modecompcountry"]);
-    showPlot("#v1 .vega", "/api/country/composite?"+$("#modecompcountry").serialize());
+    const vars = ["modecompcountry","timecompcountry"];
+    makePermalink(1, vars);
+    showPlot("#v1 .vega", "/api/country/composite?"+params(vars));
 }
 function state() {
-    makePermalink(10, ["selstate","modestate"]);
-    showPlot( "#v10 .vega", "/api/state/graph?"+$("#selstate").serialize() + "&" + $("#modestate").serialize() );
+    const vars = ["selstate","modestate","timestate"];
+    makePermalink(10, vars);
+    showPlot("#v10 .vega", "/api/state/graph?"+params(vars));
 }
 function stateComposite() {
-    makePermalink(11, ["modecompstate"]);
-    showPlot( "#v11 .vega", "/api/state/composite?"+$("#modecompstate").serialize() );
+    const vars = ["modecompstate","timecompstate"];
+    $("#timecompstate").prop(
+        'disabled', 
+        ['VB','VP','DB'].indexOf($("#modecompstate").val()) >= 0
+    )
+    makePermalink(11, vars);
+    showPlot("#v11 .vega", "/api/state/composite?"+params(vars));
 }
 function county() {
-    makePermalink(20, ["selcounty"]);
-    showPlot( "#v20 .vega", "/api/county/simple?"+$("#selcounty").serialize() );
+    const vars = ["selcounty","timecounty"];
+    makePermalink(20, vars);
+    showPlot("#v20 .vega", "/api/county/simple?"+params(vars));
 }
 function countyComposite() {
-    makePermalink(21, ["modecompcounty"]);
-    showPlot( "#v21 .vega", "/api/county/composite?"+$("#modecompcounty").serialize() );
+    const vars = ["modecompcounty","timecompcounty"]
+    makePermalink(21, vars);
+    showPlot("#v21 .vega", "/api/county/composite?"+params(vars));
 }
 function renderView(view) {
     switch(view) {
@@ -93,15 +106,18 @@ function defaults(params) {
 $(function(){
     let view_id = defaults(this.location.search.substr(1));
 
-    $("#selcountry,#modecompcountry,#selstate,#modestate,#modecompstate,#selcounty,#modecompcounty").select2({
+    $("#selcountry,#modecompcountry,#selstate,#modecompstate,#selcounty,#modecompcounty").select2({
         width: '18em'
     });
-    $("#selcountry").change(country);
-    $("#modecompcountry").change(countryComposite);
-    $("#selstate,#modestate").change(state);
-    $("#modecompstate").change(stateComposite);
-    $("#selcounty").change(county);
-    $("#modecompcounty").change(countyComposite);
+    $("#timecountry,#timecompcountry,#modestate,#timestate,#timecompstate,#timecounty,#timecompcounty").select2({
+        width: '10em'
+    });
+    $("#selcountry,#timecountry").change(country);
+    $("#modecompcountry,#timecompcountry").change(countryComposite);
+    $("#selstate,#modestate,#timestate").change(state);
+    $("#modecompstate,#timecompstate").change(stateComposite);
+    $("#selcounty,#timecounty").change(county);
+    $("#modecompcounty,#timecompcounty").change(countyComposite);
     $("div.menu .option").click(function(){
         selectView($(this).attr("id").substr(1));
         toggleMenu();

@@ -173,7 +173,7 @@ def not_too_negative(quantity,control):
         min(quantity.max(),1.5*control.max())
     ]
 
-def simple_plot(code):
+def simple_plot(code, time):
     r = connect()
 
     parts = code.split(", ")
@@ -188,6 +188,9 @@ def simple_plot(code):
 
     fc['src1'] = "Daily"
     fc['src2'] = "7 day"
+
+    if time > 0:
+        fc = fc[fc.dt > pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
 
     chart = alt.Chart(fc)
 
@@ -237,10 +240,13 @@ def simple_plot(code):
 
     return (top & bot).configure_legend(title=None).to_dict()
 
-def both():
+def both(time):
     r = connect()
 
-    dt_start = pd.to_datetime(date(2020,3,1))
+    if time > 0:
+        dt_start = pd.Timestamp.today() - pd.Timedelta(time,unit="d")
+    else:
+        dt_start = pd.to_datetime(date(2020,3,1))
 
     def fetchHere( r, state, county ):
         answer = fetchCounty( r, state, county )
@@ -298,10 +304,13 @@ def both():
     return (top & bot).add_selection(selection).configure_legend(title=None).to_dict()
 
 
-def silicon_valley():
+def silicon_valley(time):
     r = connect()
 
-    dt_start = pd.to_datetime(date(2020,3,1))
+    if time > 0:
+        dt_start = pd.Timestamp.today() - pd.Timedelta(time,unit="d")
+    else:
+        dt_start = pd.to_datetime(date(2020,3,1))
 
     def fetchHere( r, state, county ):
         answer = fetchCounty( r, state, county )

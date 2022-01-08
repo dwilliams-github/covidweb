@@ -454,12 +454,15 @@ def menu():
     }
 
 
-def plot(code):
+def plot(code, time):
     r = connect()
     dt = fetchState(r,code)
     pop = fetchPopulation(r)
 
-    dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
+    if time > 0:
+        dt = dt[dt.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
+    else:
+        dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
 
     #
     # This are fake, so we can make a legend
@@ -523,14 +526,19 @@ def plot(code):
     return (top & bot).configure_legend(title=None).to_dict()
 
 
-def hospitals(code):
+def hospitals(code, time):
     r = connect()
     dt = fetchState(r,code)
     dth = fetchHospital(r,code)
     pop = fetchPopulation(r)
 
-    dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
-    dth = dth[dth.dt >= pd.to_datetime(date(2020,3,1))]
+    if time > 0:
+        start = pd.Timestamp.today() - pd.Timedelta(time,unit="d")
+        dt = dt[dt.dt >= start]
+        dth = dth[dth.dt >= start]
+    else:
+        dt = dt[dt.dt >= pd.to_datetime(date(2020,3,1))]
+        dth = dth[dth.dt >= pd.to_datetime(date(2020,3,1))]
 
     #
     # This are fake, so we can make a legend
@@ -599,12 +607,15 @@ def hospitals(code):
 
 
 
-def vaccines(code):
+def vaccines(code, time):
     r = connect()
     dt = fetchVaccine(r,code)
 
     dt['onedose_pop'] = dt['onedose'] / dt['eligible']
     dt['complete_pop'] = dt['complete'] / dt['eligible']
+
+    if time > 0:
+        dt = dt[dt.date > pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
 
     #
     # Serialize, and also eliminate data rows with zeros, which appear to be
@@ -735,7 +746,7 @@ def vaccines_by_party():
     return (points + marks).to_dict()
 
 
-def top_four_cases():
+def top_four_cases(time):
     r = connect()
     dt = fetchRecent(r)
     
@@ -757,6 +768,9 @@ def top_four_cases():
 
     dtds = pd.concat([fetchWithRoll(code) for code in worst])
 
+    if time > 0:
+        dtds = dtds[dtds.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
+
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
     return alt.Chart(dtds).mark_line(clip=True).encode(
@@ -775,7 +789,7 @@ def top_four_cases():
     ).add_selection(selection).to_dict()
 
 
-def top_four_cases_capita():
+def top_four_cases_capita(time):
     r = connect()
     dt = fetchRecent(r)
     pop = fetchPopulation(r)
@@ -803,6 +817,9 @@ def top_four_cases_capita():
     dtds = dtds.merge(pop,on="state")
     dtds['rollpc'] = 100000*dtds.roll/dtds.POPESTIMATE2010
 
+    if time > 0:
+        dtds = dtds[dtds.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
+
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
     return alt.Chart(dtds).mark_line(clip=True).encode(
@@ -821,7 +838,7 @@ def top_four_cases_capita():
     ).add_selection(selection).to_dict()
 
 
-def top_five_fatalities():
+def top_five_fatalities(time):
     r = connect()
     dt = fetchRecent(r)
     
@@ -843,6 +860,9 @@ def top_five_fatalities():
 
     dtds = pd.concat([fetchWithRoll(code) for code in worst])
 
+    if time > 0:
+        dtds = dtds[dtds.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
+
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
     return alt.Chart(dtds).mark_line(clip=True).encode(
@@ -861,7 +881,7 @@ def top_five_fatalities():
     ).add_selection(selection).to_dict()
 
 
-def top_five_fatalities_capita():
+def top_five_fatalities_capita(time):
     r = connect()
     dt = fetchRecent(r)
     pop = fetchPopulation(r)
@@ -889,6 +909,9 @@ def top_five_fatalities_capita():
     dtds = dtds.merge(pop,on="state")
     dtds['rollpc'] = 100000*dtds.roll/dtds.POPESTIMATE2010
 
+    if time > 0:
+        dtds = dtds[dtds.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
+
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
     return alt.Chart(dtds).mark_line(clip=True).encode(
@@ -907,7 +930,7 @@ def top_five_fatalities_capita():
     ).add_selection(selection).to_dict()
 
 
-def big_four_cases_capita():
+def big_four_cases_capita(time):
     r = connect()
     pop = fetchPopulation(r)
 
@@ -920,6 +943,9 @@ def big_four_cases_capita():
 
     dt = dt.merge(pop,on="state")
     dt['rollpc'] = 100000*dt.roll/dt.POPESTIMATE2010
+
+    if time > 0:
+        dt = dt[dt.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
@@ -938,7 +964,7 @@ def big_four_cases_capita():
     ).add_selection(selection).to_dict()
 
 
-def big_four_cases():
+def big_four_cases(time):
     r = connect()
 
     def fetchWithRoll(code):
@@ -947,6 +973,9 @@ def big_four_cases():
         return answer
 
     dt = pd.concat([fetchWithRoll(code) for code in ["TX","CA","NY","FL"]])
+
+    if time > 0:
+        dt = dt[dt.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
 
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
@@ -965,7 +994,7 @@ def big_four_cases():
     ).add_selection(selection).to_dict()
 
 
-def big_four_fatalities():
+def big_four_fatalities(time):
     r = connect()
     pop = fetchPopulation(r)
 
@@ -979,6 +1008,9 @@ def big_four_fatalities():
     dt = dt.merge(pop,on="state")
     dt['rollpc'] = 100000*dt.roll/dt.POPESTIMATE2010
 
+    if time > 0:
+        dt = dt[dt.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
+        
     selection = alt.selection_multi(fields=['state'], bind='legend')
 
     return alt.Chart(dt).mark_line(clip=True).encode(

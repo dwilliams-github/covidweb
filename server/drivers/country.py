@@ -1,6 +1,6 @@
 import altair as alt
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 from os import path
 from io import StringIO
 from flask import current_app as app
@@ -77,14 +77,17 @@ def menu():
     }
 
 
-def plot(code):
+def plot(code, time):
     r = connect()
     ckey = fetchStats(r)
     dt = fetchCountry(r,code)
 
     dt['croll'] = dt.cases.rolling(window=7).mean()
     dt['droll'] = dt.deaths.rolling(window=7).mean()
-    dt = dt[dt.date >= pd.to_datetime(date(2020,3,1))]
+    if time <= 0:
+        dt = dt[dt.date >= pd.to_datetime(date(2020,3,1))]
+    else:
+        dt = dt[dt.date >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
 
     #
     # This are fake, so we can make a legend
@@ -129,7 +132,7 @@ def plot(code):
     return (top & bot).configure_legend(title=None).to_dict()
 
 
-def countries(codes):
+def countries(codes, time):
     r = connect()
     ckey = fetchStats(r)
 
@@ -143,6 +146,9 @@ def countries(codes):
         return dt
 
     dt = pd.concat([make_one(c) for c in codes])
+
+    if time > 0:
+        dt = dt[dt.date >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
 
     chart = alt.Chart(dt)
     
@@ -167,11 +173,11 @@ def countries(codes):
     return (top & bot).configure_legend(title=None).to_dict()
 
 
-def scandinavia():
-    return countries(['SWE','NOR','DNK'])
+def scandinavia(time):
+    return countries(['SWE','NOR','DNK'],time)
 
-def north_america():
-    return countries(['USA','CAN','MEX'])
+def north_america(time):
+    return countries(['USA','CAN','MEX'],time)
 
-def europe():
-    return countries(['GBR','FRA','ESP','DEU'])
+def europe(time):
+    return countries(['GBR','FRA','ESP','DEU'],time)
