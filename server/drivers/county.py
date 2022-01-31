@@ -101,10 +101,22 @@ def fetchPopulationAll(rconn):
     return answer
 
 def fetchPopulation(rconn,state,county):
-    answer = fetchPopulationAll(rconn)
-    answer = answer[(answer['CTYNAME'] == county + ' County') & (answer['STNAME'] == state)]
+    all = fetchPopulationAll(rconn)
 
-    return answer['POPESTIMATE2019'].min() if len(answer) == 1 else None
+    answer = all[(all['CTYNAME'] == county+" County") & (all['STNAME'] == state)]
+    if len(answer) == 1:
+        return answer['POPESTIMATE2019'].values[0]
+
+    #
+    # Remove incompatible suffixes
+    #
+    if county.endswith(" City"):
+        answer = all[(all['CTYNAME'] == county[:-5]+" County") & (all['STNAME'] == state)]
+        if len(answer) == 1:
+            return answer['POPESTIMATE2019'].values[0]
+
+    print(f"County population not found: '{county}' '{state}'")
+    return None
 
 def california_county_populations(rconn):
     context = pyarrow.default_serialization_context()
@@ -403,6 +415,7 @@ def compare_plot(code1, code2, time):
     def fetchHere( r, code ):
         parts = code.split(", ")
         pop = fetchPopulation(r, parts[1], parts[0])
+        if pop is None: return None
         answer = fetchCounty(r, parts[1], parts[0])
         answer['name'] = answer['county'] + ", " + answer['stcode']
         answer['croll'] = answer.dcases.rolling(window=7).mean()*100000/pop
