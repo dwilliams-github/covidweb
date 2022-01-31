@@ -58,6 +58,11 @@ function countyComposite() {
     makePermalink(21, vars);
     showPlot("#v21 .vega", "/api/county/composite?"+params(vars));
 }
+function countyCompare() {
+    const vars = ["selcounty1","selcounty2","timecomparecounty"]
+    makePermalink(22, vars);
+    showPlot("#v22 .vega", "/api/county/compare?"+params(vars));
+}
 function renderView(view) {
     switch(view) {
         case 0: return country();
@@ -66,6 +71,7 @@ function renderView(view) {
         case 11: return stateComposite();
         case 20: return county();
         case 21: return countyComposite();
+        case 22: return countyCompare();
     }
 }
 function refresh() {
@@ -106,10 +112,10 @@ function defaults(params) {
 $(function(){
     let view_id = defaults(this.location.search.substr(1));
 
-    $("#selcountry,#modecompcountry,#selstate,#modecompstate,#selcounty,#modecompcounty").select2({
+    $("#selcountry,#modecompcountry,#selstate,#modecompstate,#selcounty,#modecompcounty,#selcounty1,#selcounty2").select2({
         width: '18em'
     });
-    $("#timecountry,#timecompcountry,#modestate,#timestate,#timecompstate,#timecounty,#timecompcounty").select2({
+    $("#timecountry,#timecompcountry,#modestate,#timestate,#timecompstate,#timecounty,#timecompcounty,#timecomparecounty").select2({
         width: '10em'
     });
     $("#selcountry,#timecountry").change(country);
@@ -118,6 +124,7 @@ $(function(){
     $("#modecompstate,#timecompstate").change(stateComposite);
     $("#selcounty,#timecounty").change(county);
     $("#modecompcounty,#timecompcounty").change(countyComposite);
+    $("#selcounty1,#selcounty2,#timecomparecounty").change(countyCompare);
     $("div.menu .option").click(function(){
         selectView($(this).attr("id").substr(1));
         toggleMenu();

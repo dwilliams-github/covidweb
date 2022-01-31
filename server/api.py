@@ -86,4 +86,16 @@ def plot_county_composite():
         return jsonify(county.both(time))
     if mode == 'SV':
         return jsonify(county.silicon_valley(time))
+    if mode == 'HS':
+        return jsonify(county.harris_vs_santa_clara(time))
+
     return jsonify({'status':'failure'}), 400
+
+
+@api.route("/api/county/compare")
+def plot_county_compare():
+    return jsonify(county.compare_plot(
+        request.args.get('code1','Santa Clara, California'),
+        request.args.get('code2','Harris, California'),
+        int(request.args.get('time',0))
+    ))

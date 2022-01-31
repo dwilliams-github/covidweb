@@ -424,7 +424,7 @@ def fetchPopulation(rconn):
     namefile = path.join(app.config['DATA_DIR'],"state-abbre.csv")
 
     pop = pd.read_csv(popfile).merge(pd.read_csv(namefile).rename(columns={'State':'NAME'}),on="NAME")
-    pop = pop.filter(items=("NAME","Code","POPESTIMATE2010")).rename(columns={"Code":"state"})
+    pop = pop.filter(items=("NAME","Code","POPESTIMATE2019")).rename(columns={"Code":"state"})
 
     rconn.hset("state","population",context.serialize(pop).to_buffer().to_pybytes())
     return pop
@@ -795,7 +795,7 @@ def top_four_cases_capita(time):
     pop = fetchPopulation(r)
 
     dt = dt.merge(pop,on="state")
-    dt['cases'] = 100000*dt.new_case/dt.POPESTIMATE2010
+    dt['cases'] = 100000*dt.new_case/dt.POPESTIMATE2019
     
     #
     # Reduce dataframe to four worst states, by most recent 7 day rolling
@@ -815,7 +815,7 @@ def top_four_cases_capita(time):
 
     dtds = pd.concat([fetchWithRoll(code) for code in worst])
     dtds = dtds.merge(pop,on="state")
-    dtds['rollpc'] = 100000*dtds.roll/dtds.POPESTIMATE2010
+    dtds['rollpc'] = 100000*dtds.roll/dtds.POPESTIMATE2019
 
     if time > 0:
         dtds = dtds[dtds.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
@@ -887,7 +887,7 @@ def top_five_fatalities_capita(time):
     pop = fetchPopulation(r)
 
     dt = dt.merge(pop,on="state")
-    dt['deaths'] = 100000*dt.new_death/dt.POPESTIMATE2010
+    dt['deaths'] = 100000*dt.new_death/dt.POPESTIMATE2019
     
     #
     # Reduce dataframe to four worst states, by most recent 7 day rolling
@@ -907,7 +907,7 @@ def top_five_fatalities_capita(time):
 
     dtds = pd.concat([fetchWithRoll(code) for code in worst])
     dtds = dtds.merge(pop,on="state")
-    dtds['rollpc'] = 100000*dtds.roll/dtds.POPESTIMATE2010
+    dtds['rollpc'] = 100000*dtds.roll/dtds.POPESTIMATE2019
 
     if time > 0:
         dtds = dtds[dtds.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
@@ -942,7 +942,7 @@ def big_four_cases_capita(time):
     dt = pd.concat([fetchWithRoll(code) for code in ["TX","CA","NY","FL"]])
 
     dt = dt.merge(pop,on="state")
-    dt['rollpc'] = 100000*dt.roll/dt.POPESTIMATE2010
+    dt['rollpc'] = 100000*dt.roll/dt.POPESTIMATE2019
 
     if time > 0:
         dt = dt[dt.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
@@ -1006,7 +1006,7 @@ def big_four_fatalities(time):
     dt = pd.concat([fetchWithRoll(code) for code in ["TX","CA","NY","FL"]])
 
     dt = dt.merge(pop,on="state")
-    dt['rollpc'] = 100000*dt.roll/dt.POPESTIMATE2010
+    dt['rollpc'] = 100000*dt.roll/dt.POPESTIMATE2019
 
     if time > 0:
         dt = dt[dt.dt >= pd.Timestamp.today() - pd.Timedelta(time,unit="d")]
@@ -1034,13 +1034,13 @@ def death_bar():
     pop = fetchPopulation(r)
 
     dt = dt.merge(pop,on="state")
-    dt['deaths'] = 100000*dt.new_death/dt.POPESTIMATE2010
+    dt['deaths'] = 100000*dt.new_death/dt.POPESTIMATE2019
 
     latest = dt.groupby("state").apply(lambda r: r.sort_values(by="dt").new_death.rolling(7).mean().tail(1))
     latest = latest.reset_index()
     latest = latest.merge(pop,on="state")
 
-    latest['dper'] = 100000*latest.new_death/latest.POPESTIMATE2010
+    latest['dper'] = 100000*latest.new_death/latest.POPESTIMATE2019
 
     chart = alt.Chart(latest)
 

@@ -72,9 +72,39 @@ def fetchCounty(rconn,state,county):
     answer['ddeaths'] = answer.deaths.diff()
     answer['dcases'] = answer.cases.diff()
 
+    states = pd.read_csv(path.join(app.config['DATA_DIR'],"state-abbre.csv"))
+    abbrev = states[states['State']==state]['Code']
+    answer['stcode'] = abbrev.iloc[0] if len(abbrev) > 0 else "?"
+
     rconn.hset("county",key,context.serialize(answer).to_buffer().to_pybytes())
     rconn.hset("county",key_expires,str(time.time()+600.0))
     return answer
+
+def fetchPopulationAll(rconn):
+    context = pyarrow.default_serialization_context()
+
+    #
+    # See if we have this cached
+    #
+    key = 'population'
+    serialized = rconn.hget("county",key)
+    if serialized:
+        return context.deserialize(serialized)
+
+    #
+    # Process and save
+    #
+    answer = pd.read_csv(path.join(app.config['DATA_DIR'],"co-est2019-alldata.csv"), encoding='Windows-1252')
+    answer = answer.filter(items=['CTYNAME','STNAME','POPESTIMATE2019'])
+    rconn.hset("county",key,context.serialize(answer).to_buffer().to_pybytes())
+    
+    return answer
+
+def fetchPopulation(rconn,state,county):
+    answer = fetchPopulationAll(rconn)
+    answer = answer[(answer['CTYNAME'] == county + ' County') & (answer['STNAME'] == state)]
+
+    return answer['POPESTIMATE2019'].min() if len(answer) == 1 else None
 
 def california_county_populations(rconn):
     context = pyarrow.default_serialization_context()
@@ -159,7 +189,8 @@ def menu():
 
     return {
         'names': names.sort_values(),
-        'default': "Santa Clara, California"
+        'default': "Santa Clara, California",
+        'default2': "Harris, Texas"
     }
 
 #
@@ -170,6 +201,16 @@ def menu():
 def not_too_negative(quantity,control):
     return [
         max(quantity.min(),-np.ceil(0.05*quantity.max())), 
+        min(quantity.max(),1.5*control.max())
+    ]
+
+#
+# Similar, but for stats per capita, we have continuous
+# values
+#
+def not_too_negative_continuous(quantity,control):
+    return [
+        max(quantity.min(),-0.05*quantity.max()), 
         min(quantity.max(),1.5*control.max())
     ]
 
@@ -250,8 +291,9 @@ def both(time):
 
     def fetchHere( r, state, county ):
         answer = fetchCounty( r, state, county )
+        answer['name'] = answer['county'] + ", " + answer['stcode']
         answer['droll'] = answer.dcases.rolling(window=7).mean()
-        return answer[answer.dt >= dt_start].filter(items=("dt","dcases","droll","county"))
+        return answer[answer.dt >= dt_start].filter(items=("dt","dcases","droll","name"))
 
     sa = fetchHere( r, "Oregon", "Marion" )
     cc = fetchHere( r, "Massachusetts", "Barnstable" )
@@ -260,7 +302,7 @@ def both(time):
 
     dt_top = pd.concat((sa,cc,pl))
 
-    selection = alt.selection_multi(fields=['county'], bind='legend', empty='none')
+    selection = alt.selection_multi(fields=['name'], bind='legend', empty='none')
     scale = alt.Scale(domain=[dt_start,sa.dt.max()])
 
     top_points = alt.Chart(dt_top).mark_line(point=True, clip=True).encode(
@@ -270,14 +312,14 @@ def both(time):
             title = "Daily cases, 7 day rolling average",
             scale = alt.Scale(domain=not_too_negative(dt_top.droll,dt_top.droll))
         ),
-        color = alt.Color("county:N"),
+        color = alt.Color("name:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
     )
 
     top_lines = alt.Chart(dt_top).mark_line(clip=True).encode(
         x = alt.X("dt:T", title="Date", scale=scale),
         y = alt.Y("droll:Q"),
-        color = alt.Color("county:N")
+        color = alt.Color("name:N")
     )
     
     top = (top_points + top_lines).properties(width=500, height=200)
@@ -289,14 +331,14 @@ def both(time):
             title = "Daily cases, 7 day rolling average",
             scale = alt.Scale(domain=not_too_negative(ha.droll,ha.droll))
         ),
-        color = alt.Color("county:N"),
+        color = alt.Color("name:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
     )
 
     bot_lines = alt.Chart(ha).mark_line(clip=True).encode(
         x = alt.X("dt:T", title="Date", scale=scale),
         y = alt.Y("droll:Q"),
-        color = alt.Color("county:N")
+        color = alt.Color("name:N")
     )
     
     bot = (bot_points + bot_lines).properties(width=500, height=200)
@@ -314,8 +356,9 @@ def silicon_valley(time):
 
     def fetchHere( r, state, county ):
         answer = fetchCounty( r, state, county )
+        answer['name'] = answer['county'] + ", " + answer['stcode']
         answer['droll'] = answer.dcases.rolling(window=7).mean()
-        return answer[answer.dt >= dt_start].filter(items=("dt","dcases","droll","county"))
+        return answer[answer.dt >= dt_start].filter(items=("dt","dcases","droll","name"))
 
     dt = pd.concat((
         fetchHere( r, "California", "Santa Clara" ),
@@ -323,7 +366,7 @@ def silicon_valley(time):
     ))
     chart = alt.Chart(dt)
 
-    selection = alt.selection_multi(fields=['county'], bind='legend', empty='none')
+    selection = alt.selection_multi(fields=['name'], bind='legend', empty='none')
     scale = alt.Scale(domain=[dt_start,dt.dt.max()])
 
     points = chart.mark_line(point=True, clip=True).encode(
@@ -333,19 +376,72 @@ def silicon_valley(time):
             title = "Daily cases, 7 day rolling average",
             scale = alt.Scale(domain=not_too_negative(dt.droll,dt.droll))
         ),
-        color = alt.Color("county:N"),
+        color = alt.Color("name:N"),
         opacity = alt.condition(selection, alt.value(1), alt.value(0))
     )
 
     lines = chart.mark_line(clip=True).encode(
         x = alt.X("dt:T", title="Date", scale=scale),
         y = alt.X("droll:Q"),
-        color = alt.Color("county:N")
+        color = alt.Color("name:N")
     )
     
     plot = (points+lines).properties(width=500, height=300)
 
     return plot.add_selection(selection).configure_legend(title=None).to_dict()
+
+
+
+def compare_plot(code1, code2, time):
+    r = connect()
+
+    if time > 0:
+        dt_start = pd.Timestamp.today() - pd.Timedelta(time,unit="d")
+    else:
+        dt_start = pd.to_datetime(date(2020,3,1))
+
+    def fetchHere( r, code ):
+        parts = code.split(", ")
+        pop = fetchPopulation(r, parts[1], parts[0])
+        answer = fetchCounty(r, parts[1], parts[0])
+        answer['name'] = answer['county'] + ", " + answer['stcode']
+        answer['croll'] = answer.dcases.rolling(window=7).mean()*100000/pop
+        answer['droll'] = answer.ddeaths.rolling(window=7).mean()*100000/pop
+        return answer[answer.dt >= dt_start].filter(items=("dt","croll","droll","name"))
+
+    dt = pd.concat((
+        fetchHere( r, code1 ),
+        fetchHere( r, code2 ),
+    ))
+    chart = alt.Chart(dt)
+
+    selection = alt.selection_multi(fields=['name'], bind='legend')
+    scale = alt.Scale(domain=[dt_start,dt.dt.max()])
+
+    top = chart.mark_line(clip=True).encode(
+        x = alt.X("dt:T", title="Date", scale=scale),
+        y = alt.X(
+            "croll:Q", 
+            title = "Cases per 100,000, 7 day rolling average",
+            scale = alt.Scale(domain=not_too_negative_continuous(dt.croll,dt.croll))
+        ),
+        color = alt.Color("name:N"),
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(width=500, height=200)
+
+    bot = chart.mark_line(clip=True).encode(
+        x = alt.X("dt:T", title="Date", scale=scale),
+        y = alt.X(
+            "droll:Q", 
+            title = "Fatalities per 100,000, 7 day rolling average",
+            scale = alt.Scale(domain=not_too_negative_continuous(dt.droll,dt.droll))
+        ),
+        color = alt.Color("name:N"),
+        opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
+    ).properties(width=500, height=200)
+
+    return (top & bot).add_selection(selection).configure_legend(title=None).to_dict()
+
 
 def california_bar(percapital=False):
     r = connect()
@@ -370,3 +466,7 @@ def california_bar(percapital=False):
         )
 
     return answer.properties(width=300, height=600).to_dict()
+
+
+def harris_vs_santa_clara(time):
+    return compare_plot( 'Santa Clara, California', 'Harris, Texas', time)

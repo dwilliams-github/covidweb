@@ -36,6 +36,7 @@
         <div id="s11" class="option">US State Composites</div>
         <div id="s20" class="option">US County Overview</div>
         <div id="s21" class="option">US County Composites</div>
+        <div id="s22" class="option">US County Compare</div>
       </div>
       <div id="v0" class="view">
         <div class="control">
@@ -202,6 +203,43 @@
           <ul>
             <li>Data from <a href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html" target="_blank">The New York Times</a>, based on reports from state and local health agencies</li>
             <li><a href="https://www.california-demographics.com/counties_by_population" target="_blank">California Counties by Population</a> from Cubit Planning, Inc.</li>
+          </ul>
+        </div>
+      </div>
+      <div id="v22" class="view hidden">
+        <div class="control">
+          <select name="code1" id="selcounty1">
+            {% for n in county_menu.names %}
+              {% if n == county_menu.default %}
+                <option selected="selected">{{n}}</option>
+              {% else %}
+                <option >{{n}}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <select name="code2" id="selcounty2">
+            {% for n in county_menu.names %}
+              {% if n == county_menu.default2 %}
+                <option selected="selected">{{n}}</option>
+              {% else %}
+                <option >{{n}}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <select name="time" id="timecomparecounty">
+            <option value="0" selected="selected">Historical</option>
+            <option value="360">Past 360 days</option>
+            <option value="120">Past 120 days</option>
+          </select>
+          <div class="reload">⟳</div>
+          <div class="permalink"><a href="">#permalink</a></div>
+        </div>
+        <div class="vega"></div>
+        <div class="sources">
+          <p>Data sources:</p>
+          <ul>
+            <li>Data from <a href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html" target="_blank">The New York Times</a>, based on reports from state and local health agencies</li>
+            <li><a href="https://data.census.gov/cedsci/" target="_blank">US Census</a> 2019 population estimates</li>
           </ul>
         </div>
       </div>
